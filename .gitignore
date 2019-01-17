@@ -1,0 +1,10 @@
+*.bat
+.gitignore
+__pycache__/
+*.sln
+*.pyproj
+*.pyc
+*.data*
+*.meta*
+*.index*
+*.md
