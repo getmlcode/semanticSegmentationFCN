@@ -67,6 +67,8 @@ class FullyConvNet:
 
 
     def trainFCN(self):
+        
+        print('add training code')
         return
 
     def getSegmentedImage(self,inputImage):
@@ -87,10 +89,4 @@ if __name__=="__main__":
     fcnImageSegmenter = FullyConvNet(sess,modelDir,trainDir,fcnModelDir,3)
     print('Object created successfully')
 
-    print('\nCreating object for inference only')
-    fcnImageSegmenter = FullyConvNet(sess,fcnModelDir)
-    print('Object created successfully')
-
-    print('\nCreating object with invalind number of arguments')
-    fcnImageSegmenter = FullyConvNet(sess,modelDir,fcnModelDir)
-    print('Code shouldn\'t reach here')
+    fcnImageSegmenter.trainFCN()
