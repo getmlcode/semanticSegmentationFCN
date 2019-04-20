@@ -1,16 +1,21 @@
 import tensorflow as tf
 import numpy as np
+import os
+import preprocess
 
 
 class FullyConvNet:
     def __init__(self,sess,*argv):
         self.sess = sess
+        self.nArgs = len(argv) 
         try:
-            if len(argv) == 4:
+            if self.nArgs == 4:
                 self.vggModelDir = argv[0]
                 self.trainDataDir = argv[1]
                 self.fcnModelDir = argv[2]
                 self.numClasses = argv[3]
+                self.optAlgo = argv[4]
+                self.learningRate = argv[5]
                 #load/restore Vgg model from vggModelDir and retrieve layers needed for FCN
                 print('Loading VGG model and retrieving layers')
                 self.vggModel = tf.saved_model.loader.load(self.sess, ['vgg16'], self.vggModelDir)
@@ -56,8 +61,8 @@ class FullyConvNet:
                                                         strides=(8, 8),
                                                         padding='SAME',
                                                         name="fcn11")
-            elif len(argv) == 1:
-                #add code for restoring FCN model
+            elif self.nArgs == 1:
+                #Add code for restoring FCN model for inference
                 print('TODO : Add FCN model restoration code')
                 pass
             else:
@@ -65,11 +70,53 @@ class FullyConvNet:
         except(ValueError):
             exit('Failed To Construct Object')
 
+    def getOptimizer(loss_op,optAlgo,rate):
+
+        if optAlgo == 'adam':
+            return tf.train.AdamOptimizer(learning_rate=rate).minimize(loss_op, name="fcn_train_op")
+        elif optAlgo == 'grad':
+            return tf.train.GradientDescentOptimizer(learning_rate=rate).minimize(loss_op, name="fcn_train_op")
+
+    #def getRateSchedule(rateSchedule):
+    #    def expDecay(epochNum,alpha,currentRate):
+    #        #implement exponential decay for lerning rate
+    #        return
+
+    #    def fracDecay(epochNum,alpha,currentRate):
+    #        return
+        
+    #    def const(currentRate):
+    #        return currentRate
+
+    #    if rateSchedule == 'exp':
+    #        return expDecay
+    #    elif rateSchedule == 'frac':
+    #        return fracDecay
+    #    else:
+    #        return const
 
     def trainFCN(self):
-        
-        print('add training code')
-        return
+        try:
+            if self.nArgs == 4:
+
+                correct_label = tf.placeholder(tf.float32, [None, IMAGE_SHAPE[0], IMAGE_SHAPE[1], NUMBER_OF_CLASSES])
+                correct_label_reshaped = tf.reshape(correct_label, (-1, num_classes))
+
+                # Reshape 4D tensors to 2D, each row represents a pixel, each column a class
+                self.logits = tf.reshape(self.fcn11,(-1, self.numClasses),name="fcn_logits")
+                self.correct_label_reshaped = tf.reshape(correct_label,(-1, num_classes))
+
+                # Calculate distance from actual labels using cross entropy
+                self.cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=self.logits,
+                                                                        labels=correct_label_reshaped[:])
+
+                self.loss_op = tf.reduce_mean(cross_entropy,name="fcn_loss")
+                self.optimizer = self.getOptimizer(self.loss_op,self.optAlgo,self.learningRate)
+
+            else:
+                raise ValueError('Object Not Meant For Training')
+        except(ValueError):
+            exit('Sorry, This Object Was Not Created For Training Purpose !!')
 
     def getSegmentedImage(self,inputImage):
         return
@@ -81,12 +128,12 @@ class FullyConvNet:
 if __name__=="__main__":
 
     sess = tf.Session()
-    modelDir='D:\\Acads\\IISc ME\\Projects\\SemanticSegmentation\\fullyConvolutionalNet\\model\\vgg'
-    trainDir='C:\\DataSets'
-    fcnModelDir='D:\\Acads\\IISc ME\\Projects\\SemanticSegmentation\\fullyConvolutionalNet\\model\\FCN'
+    modelDir=os.getcwd()+'\\model\\vgg'
+    trainDir='C:\\DataSets\\data_road\training'
+    fcnModelDir=os.getcwd()+'\\model\\FCN'
 
     print('Creating object for training')
-    fcnImageSegmenter = FullyConvNet(sess,modelDir,trainDir,fcnModelDir,3)
+    fcnImageSegmenter = FullyConvNet(sess,modelDir,trainDir,fcnModelDir,3,'adam',.01)
     print('Object created successfully')
 
-    fcnImageSegmenter.trainFCN()
+    #fcnImageSegmenter.trainFCN()
