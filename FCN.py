@@ -9,7 +9,7 @@ class FullyConvNet:
         self.sess = sess
         self.nArgs = len(argv) 
         try:
-            if self.nArgs == 4:
+            if self.nArgs == 6:
                 self.vggModelDir = argv[0]
                 self.trainDataDir = argv[1]
                 self.fcnModelDir = argv[2]
@@ -17,7 +17,7 @@ class FullyConvNet:
                 self.optAlgo = argv[4]
                 self.learningRate = argv[5]
                 #load/restore Vgg model from vggModelDir and retrieve layers needed for FCN
-                print('Loading VGG model and retrieving layers')
+                print('Loading VGG model and retrieving layers from : \n{}'.format(self.vggModelDir))
                 self.vggModel = tf.saved_model.loader.load(self.sess, ['vgg16'], self.vggModelDir)
                 self.graph = tf.get_default_graph()
                 self.image_input = self.graph.get_tensor_by_name('image_input:0')
