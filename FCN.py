@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import os
-import preprocess
+from preprocess import DataLoader
 
 
 class FullyConvNet:
@@ -117,24 +117,35 @@ class FullyConvNet:
 
     def trainFCN(self,batchSize,keep_prob_value):
         self.batchSize = batchSize
-        try:
-            if self.nArgs == 7:
-                Loader = preprocess.DataLoader(trainFolder,(160,576))
-                self.keep_prob_value = 0.5
-                for epoch in range(self.numOfEpochs):
-                    total_loss = 0
+    
+        imageLoader = DataLoader(self.trainDataDir, self.ImageShape)
+        imageBatch = imageLoader.load_batches_from_disk(self.batchSize)
 
-                    imageBatch = imageLoader.load_batches_from_disk(self.batchSize)
+        self.keep_prob_value = keep_prob_value
 
-                    for images,labels in imageBatch:
-                        loss, _ = sess.run([self.cross_entropy, self.optimizer],
-                                           feed_dict={self.input_image: images, self.correct_label: labels,
-                                           self.keep_prob: self.keep_prob_value})
-                        total_loss += loss
-            else:
-                raise ValueError('Object Not Meant For Training')
-        except(ValueError):
-            exit('Sorry, This Object Was Not Created For Training Purpose !!')
+        # Initialize all variables
+        self.sess.run(tf.global_variables_initializer())
+        self.sess.run(tf.local_variables_initializer())
+        
+        print('Batch Size : ', self.batchSize)
+
+        for epoch in range(self.numOfEpochs):
+            print("EPOCH {} In Progress...".format(epoch + 1))
+            totalLoss = 0
+            batch = 1
+            for images,labels in imageBatch:
+                print('\tBackpropagating On Batch : ', batch)
+                loss, _ = self.sess.run([self.cross_entropy, self.optimizer],
+                                    feed_dict={self.image_input: images, 
+                                               self.correct_label: labels,
+                                               self.keep_prob: self.keep_prob_value})
+                totalLoss += loss
+                print("\tLoss = ",loss)
+                print("\tTotal_Loss = ",totalLoss)
+                batch+=1
+
+            print("Loss = ",totalLoss)
+            print()
 
     
     def getSegmentedImage(self, inputImage):
@@ -146,15 +157,19 @@ class FullyConvNet:
 
 if __name__=="__main__":
 
+
     sess = tf.Session()
     modelDir = os.getcwd()+'\\model\\vgg'
-    trainDir = 'C:\\DataSets\\data_road\training'
+    trainDir = 'C:\\DataSets\\data_road\\training'
     fcnModelDir = os.getcwd()+'\\model\\FCN'
 
     ImgSize = (160,576) # Size to which resize train images
 
     print('Creating object for training')
-    fcnImageSegmenter = FullyConvNet(sess, modelDir, trainDir, fcnModelDir, 3, 'adam', .1, 500,ImgSize)
+    fcnImageSegmenter = FullyConvNet(sess, modelDir, trainDir, fcnModelDir, 
+                                     2, 'adam', .001, 5, ImgSize)
+
     print('Object created successfully')
 
     fcnImageSegmenter.setOptimizer()
+    fcnImageSegmenter.trainFCN(5, 0.5)
