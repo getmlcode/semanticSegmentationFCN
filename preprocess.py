@@ -60,15 +60,16 @@ if __name__=="__main__":
     imageBatch = imageLoader.load_batches_from_disk(batchSize)
     batch=1
 
-    print('Batch Size : ',batchSize)
+    print('Batch Size : ', batchSize)
     for images in imageBatch:
         print('Showing Images From Batch : ', batch)
         i=1
         for image in images[0]:
             print('\tYou Are Seeing Image ',i)
-            plt.imshow(image)
-            plt.show()
+            #plt.imshow(image)
+            #plt.show()
             i+=1
+        print('Total Images Seen So Far : ', batchSize*(batch-1) + i-1 )
         print('\n')
         batch+=1
 
