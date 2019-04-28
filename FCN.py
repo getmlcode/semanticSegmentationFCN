@@ -9,7 +9,7 @@ class FullyConvNet:
         self.sess = sess
         self.nArgs = len(argv)
         try:
-            if self.nArgs == 7:
+            if self.nArgs == 8:
                 self.vggModelDir      = argv[0]
                 self.trainDataDir     = argv[1]
                 self.fcnModelDir      = argv[2]
@@ -17,6 +17,7 @@ class FullyConvNet:
                 self.optAlgo          = argv[4]
                 self.initLearningRate = argv[5]
                 self.numOfEpochs      = argv[6]
+                self.ImageShape       = argv[7]
 
                 #load/restore Vgg model from vggModelDir and retrieve layers needed for FCN
                 print('Loading VGG model and retrieving layers from : \n{}'.format(self.vggModelDir))
@@ -69,11 +70,12 @@ class FullyConvNet:
                 print('TODO : Add FCN model restoration code')
                 pass
             else:
+                print('Invalid Number of Arguments')
                 raise ValueError('Invalid Number of Arguments')
         except(ValueError):
             exit('Failed To Construct Object')
 
-    def getOptimizer(loss_op, optAlgo, rate, global_step):
+    def getOptimizer(self,loss_op, optAlgo, rate, global_step):
 
         if optAlgo == 'adam':
             return tf.train.AdamOptimizer(rate).minimize(loss_op, global_step=global_step, name="fcn_train_op")
@@ -82,11 +84,12 @@ class FullyConvNet:
         elif optAlgo == 'mntm':
             return tf.train.MomentumOptimizer(rate).minimize(loss_op, global_step=global_step, name="fcn_train_op")
 
-    def trainFCN(self):
+    def setOptimizer(self):
         try:
-            if self.nArgs == 7:
+            if self.nArgs == 8:
 
-                self.correct_label = tf.placeholder(tf.float32, [None, IMAGE_SHAPE[0], IMAGE_SHAPE[1], self.numClasses])
+                self.correct_label = tf.placeholder(tf.float32, [None, self.ImageShape[0], 
+                                                                 self.ImageShape[1], self.numClasses])
 
                 # Reshape 4D tensors to 2D, each row represents a pixel, each column a class
                 self.logits = tf.reshape(self.fcn11,[-1, self.numClasses], name="fcn_logits")
@@ -107,13 +110,33 @@ class FullyConvNet:
                 # https://stackoverflow.com/questions/41166681/what-does-global-step-mean-in-tensorflow
                 # https://www.tensorflow.org/api_docs/python/tf/train/exponential_decay
 
-                for epoch in range(self.numOfEpochs):
-                    total_loss = 0
             else:
                 raise ValueError('Object Not Meant For Training')
         except(ValueError):
             exit('Sorry, This Object Was Not Created For Training Purpose !!')
 
+    def trainFCN(self,batchSize,keep_prob_value):
+        self.batchSize = batchSize
+        try:
+            if self.nArgs == 7:
+                Loader = preprocess.DataLoader(trainFolder,(160,576))
+                self.keep_prob_value = 0.5
+                for epoch in range(self.numOfEpochs):
+                    total_loss = 0
+
+                    imageBatch = imageLoader.load_batches_from_disk(self.batchSize)
+
+                    for images,labels in imageBatch:
+                        loss, _ = sess.run([self.cross_entropy, self.optimizer],
+                                           feed_dict={self.input_image: images, self.correct_label: labels,
+                                           self.keep_prob: self.keep_prob_value})
+                        total_loss += loss
+            else:
+                raise ValueError('Object Not Meant For Training')
+        except(ValueError):
+            exit('Sorry, This Object Was Not Created For Training Purpose !!')
+
+    
     def getSegmentedImage(self, inputImage):
         return
 
@@ -124,12 +147,14 @@ class FullyConvNet:
 if __name__=="__main__":
 
     sess = tf.Session()
-    modelDir=os.getcwd()+'\\model\\vgg'
-    trainDir='C:\\DataSets\\data_road\training'
-    fcnModelDir=os.getcwd()+'\\model\\FCN'
+    modelDir = os.getcwd()+'\\model\\vgg'
+    trainDir = 'C:\\DataSets\\data_road\training'
+    fcnModelDir = os.getcwd()+'\\model\\FCN'
+
+    ImgSize = (160,576) # Size to which resize train images
 
     print('Creating object for training')
-    fcnImageSegmenter = FullyConvNet(sess, modelDir, trainDir, fcnModelDir, 3, 'adam', .1, 500)
+    fcnImageSegmenter = FullyConvNet(sess, modelDir, trainDir, fcnModelDir, 3, 'adam', .1, 500,ImgSize)
     print('Object created successfully')
 
-    #fcnImageSegmenter.trainFCN()
+    fcnImageSegmenter.setOptimizer()
