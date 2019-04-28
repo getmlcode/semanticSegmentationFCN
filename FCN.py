@@ -5,20 +5,23 @@ import preprocess
 
 
 class FullyConvNet:
-    def __init__(self,sess,*argv):
+    def __init__(self, sess, *argv):
         self.sess = sess
-        self.nArgs = len(argv) 
+        self.nArgs = len(argv)
         try:
-            if self.nArgs == 6:
+            if self.nArgs == 7:
                 self.vggModelDir      = argv[0]
                 self.trainDataDir     = argv[1]
                 self.fcnModelDir      = argv[2]
                 self.numClasses       = argv[3]
                 self.optAlgo          = argv[4]
                 self.initLearningRate = argv[5]
+                self.numOfEpochs      = argv[6]
+
                 #load/restore Vgg model from vggModelDir and retrieve layers needed for FCN
                 print('Loading VGG model and retrieving layers from : \n{}'.format(self.vggModelDir))
                 self.vggModel = tf.saved_model.loader.load(self.sess, ['vgg16'], self.vggModelDir)
+
                 self.graph = tf.get_default_graph()
                 self.image_input = self.graph.get_tensor_by_name('image_input:0')
                 self.keep_prob = self.graph.get_tensor_by_name('keep_prob:0')
@@ -70,7 +73,7 @@ class FullyConvNet:
         except(ValueError):
             exit('Failed To Construct Object')
 
-    def getOptimizer(loss_op,optAlgo,rate,global_step):
+    def getOptimizer(loss_op, optAlgo, rate, global_step):
 
         if optAlgo == 'adam':
             return tf.train.AdamOptimizer(rate).minimize(loss_op, global_step=global_step, name="fcn_train_op")
@@ -81,40 +84,40 @@ class FullyConvNet:
 
     def trainFCN(self):
         try:
-            if self.nArgs == 4:
+            if self.nArgs == 7:
 
                 self.correct_label = tf.placeholder(tf.float32, [None, IMAGE_SHAPE[0], IMAGE_SHAPE[1], self.numClasses])
 
                 # Reshape 4D tensors to 2D, each row represents a pixel, each column a class
-                self.logits = tf.reshape(self.fcn11,(-1, self.numClasses),name="fcn_logits")
-                self.correct_label_reshaped = tf.reshape(self.correct_label,(-1, self.numClasses))
+                self.logits = tf.reshape(self.fcn11,[-1, self.numClasses], name="fcn_logits")
+                self.correct_label_reshaped = tf.reshape(self.correct_label, [-1, self.numClasses])
 
-                # Calculate distance from actual labels using cross entropy
+                # Calculate cross entropy loss using actual labels
                 self.cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=self.logits,
                                                                         labels=self.correct_label_reshaped[:])
-
-                self.loss_op = tf.reduce_mean(self.cross_entropy,name="fcn_loss")
+                self.loss_op = tf.reduce_mean(self.cross_entropy, name="fcn_loss")
                 
                 global_step = tf.Variable(0, trainable=False)
-                learning_rate = tf.train.exponential_decay(self.initLearningRate, global_step,100000, 0.96, staircase=True)
-                self.optimizer = self.getOptimizer(self.loss_op,self.optAlgo,learning_rate,global_step)
+                learning_rate = tf.train.exponential_decay(self.initLearningRate, global_step, 10000, 0.96)
+                # return optimizer based on optAlgo argument passed during object creation
+                self.optimizer = self.getOptimizer(self.loss_op, self.optAlgo, learning_rate, global_step)
                 
                 # Refer below links to understand above three lines (hoping they stay alive when you refer it) 
                 # https://stackoverflow.com/questions/33919948/how-to-set-adaptive-learning-rate-for-gradientdescentoptimizer
                 # https://stackoverflow.com/questions/41166681/what-does-global-step-mean-in-tensorflow
                 # https://www.tensorflow.org/api_docs/python/tf/train/exponential_decay
 
-
-
+                for epoch in range(self.numOfEpochs):
+                    total_loss = 0
             else:
                 raise ValueError('Object Not Meant For Training')
         except(ValueError):
             exit('Sorry, This Object Was Not Created For Training Purpose !!')
 
-    def getSegmentedImage(self,inputImage):
+    def getSegmentedImage(self, inputImage):
         return
 
-    def evaluateModel(self,predictedLabel,trueLabel):
+    def evaluateModel(self, predictedLabel, trueLabel):
         return
 
 
@@ -126,7 +129,7 @@ if __name__=="__main__":
     fcnModelDir=os.getcwd()+'\\model\\FCN'
 
     print('Creating object for training')
-    fcnImageSegmenter = FullyConvNet(sess,modelDir,trainDir,fcnModelDir,3,'adam',.1)
+    fcnImageSegmenter = FullyConvNet(sess, modelDir, trainDir, fcnModelDir, 3, 'adam', .1, 500)
     print('Object created successfully')
 
     #fcnImageSegmenter.trainFCN()
