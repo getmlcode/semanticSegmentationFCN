@@ -47,7 +47,6 @@ class DataLoader:
                 
                 images.append(image)
                 gt_images.append(gt_image)
-                print('here')
             yield np.array(images), np.array(gt_images)
     
     def load_batches_from_memory(self,batch_size):
@@ -66,7 +65,7 @@ if __name__=="__main__":
         print('Showing Images From Batch : ', batch)
         i=1
         for image in images[0]:
-            print('\tYou Are Seing Image ',i)
+            print('\tYou Are Seeing Image ',i)
             plt.imshow(image)
             plt.show()
             i+=1
