@@ -117,19 +117,24 @@ class FullyConvNet:
 
     def trainFCN(self,batchSize,keep_prob_value):
         self.batchSize = batchSize
-    
+
+        #Loads and reshapes images in batches from disk rather than memory
         imageLoader = DataLoader(self.trainDataDir, self.ImageShape)
-        imageBatch = imageLoader.load_batches_from_disk(self.batchSize)
 
         self.keep_prob_value = keep_prob_value
 
         # Initialize all variables
+
+        print('Initializing TF Variables')
         self.sess.run(tf.global_variables_initializer())
         self.sess.run(tf.local_variables_initializer())
+        print('Initialization finished')
         
         print('Batch Size : ', self.batchSize)
 
         for epoch in range(self.numOfEpochs):
+
+            imageBatch = imageLoader.load_batches_from_disk(self.batchSize)
             print("EPOCH {} In Progress...".format(epoch + 1))
             totalLoss = 0
             batch = 1
@@ -141,10 +146,10 @@ class FullyConvNet:
                                                self.keep_prob: self.keep_prob_value})
                 totalLoss += loss
                 print("\tLoss = ",loss)
-                print("\tTotal_Loss = ",totalLoss)
+                print("\tTotal Loss = ",totalLoss)
                 batch+=1
 
-            print("Loss = ",totalLoss)
+            print("Total Loss For Epoch {} = {}".format(epoch+1, totalLoss))
             print()
 
     
@@ -172,4 +177,4 @@ if __name__=="__main__":
     print('Object created successfully')
 
     fcnImageSegmenter.setOptimizer()
-    fcnImageSegmenter.trainFCN(5, 0.5)
+    fcnImageSegmenter.trainFCN(32, 0.5)

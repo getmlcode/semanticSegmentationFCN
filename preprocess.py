@@ -57,20 +57,24 @@ if __name__=="__main__":
     batchSize = 10
     
     imageLoader = DataLoader(trainFolder,(160,576))
-    imageBatch = imageLoader.load_batches_from_disk(batchSize)
-    batch=1
+
 
     print('Batch Size : ', batchSize)
-    for images in imageBatch:
-        print('Showing Images From Batch : ', batch)
-        i=1
-        for image in images[0]:
-            print('\tYou Are Seeing Image ',i)
-            #plt.imshow(image)
-            #plt.show()
-            i+=1
-        print('Total Images Seen So Far : ', batchSize*(batch-1) + i-1 )
-        print('\n')
-        batch+=1
+
+    for epoch in range(20):
+        print('Epoch : ',epoch+1)
+        imageBatch = imageLoader.load_batches_from_disk(batchSize)
+        batch=1
+        for images in imageBatch:
+            print('\tShowing Images From Batch : ', batch)
+            i=1
+            for image in images[0]:
+                print('\t\tYou Are Seeing Image ',i)
+                #plt.imshow(image)
+                #plt.show()
+                i+=1
+            print('\tTotal Images Seen So Far : ', batchSize*(batch-1) + i-1 )
+            print('\n')
+            batch+=1
 
 
