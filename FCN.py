@@ -9,7 +9,7 @@ class FullyConvNet:
         self.sess = sess
         self.nArgs = len(argv)
         try:
-            if self.nArgs == 8:
+            if self.nArgs == 9:
                 self.vggModelDir      = argv[0]
                 self.trainDataDir     = argv[1]
                 self.fcnModelDir      = argv[2]
@@ -17,7 +17,8 @@ class FullyConvNet:
                 self.optAlgo          = argv[4]
                 self.initLearningRate = argv[5]
                 self.numOfEpochs      = argv[6]
-                self.ImageShape       = argv[7]
+                self.imageShape       = argv[7]
+                self.maxGradNorm      = argv[8]
 
                 #load/restore Vgg model from vggModelDir and retrieve layers needed for FCN
                 print('Loading VGG model and retrieving layers from : \n{}'.format(self.vggModelDir))
@@ -75,21 +76,21 @@ class FullyConvNet:
         except(ValueError):
             exit('Failed To Construct Object')
 
-    def getOptimizer(self,loss_op, optAlgo, rate, global_step):
+    def getOptimizer(self,loss_op, optAlgo, learningRate):
 
         if optAlgo == 'adam':
-            return tf.train.AdamOptimizer(rate).minimize(loss_op, global_step=global_step, name="fcn_train_op")
+            return tf.train.AdamOptimizer(learningRate)
         elif optAlgo == 'grad':
-            return tf.train.GradientDescentOptimizer(rate).minimize(loss_op, global_step=global_step, name="fcn_train_op")
+            return tf.train.GradientDescentOptimizer(learningRate)
         elif optAlgo == 'mntm':
-            return tf.train.MomentumOptimizer(rate).minimize(loss_op, global_step=global_step, name="fcn_train_op")
+            return tf.train.MomentumOptimizer(learningRate)
 
     def setOptimizer(self):
         try:
-            if self.nArgs == 8:
+            if self.nArgs == 9:
 
-                self.correct_label = tf.placeholder(tf.float32, [None, self.ImageShape[0], 
-                                                                 self.ImageShape[1], self.numClasses])
+                self.correct_label = tf.placeholder(tf.float32, [None, self.imageShape[0], 
+                                                                 self.imageShape[1], self.numClasses])
 
                 # Reshape 4D tensors to 2D, each row represents a pixel, each column a class
                 self.logits = tf.reshape(self.fcn11,[-1, self.numClasses], name="fcn_logits")
@@ -103,13 +104,20 @@ class FullyConvNet:
                 global_step = tf.Variable(0, trainable=False)
                 learning_rate = tf.train.exponential_decay(self.initLearningRate, global_step, 10000, 0.96)
                 # return optimizer based on optAlgo argument passed during object creation
-                self.optimizer = self.getOptimizer(self.loss_op, self.optAlgo, learning_rate, global_step)
+                self.optFunc = self.getOptimizer(self.loss_op, self.optAlgo, learning_rate)
                 
                 # Refer below links to understand above three lines (hoping they stay alive when you refer it) 
                 # https://stackoverflow.com/questions/33919948/how-to-set-adaptive-learning-rate-for-gradientdescentoptimizer
                 # https://stackoverflow.com/questions/41166681/what-does-global-step-mean-in-tensorflow
                 # https://www.tensorflow.org/api_docs/python/tf/train/exponential_decay
 
+                # Use gradient clipping to prevet exploding gradient problem
+                # maxGradNorm is the maximum norm for gradient vector
+                trainVars = tf.trainable_variables()
+                grads, _ = tf.clip_by_global_norm(tf.gradients(self.loss_op, trainVars), self.maxGradNorm)
+                self.optimizer = self.optFunc.apply_gradients(zip(grads, trainVars), 
+                                                              global_step = global_step, 
+                                                              name="fcn_train_op")
             else:
                 raise ValueError('Object Not Meant For Training')
         except(ValueError):
@@ -119,7 +127,7 @@ class FullyConvNet:
         self.batchSize = batchSize
 
         #Loads and reshapes images in batches from disk rather than memory
-        imageLoader = DataLoader(self.trainDataDir, self.ImageShape)
+        imageLoader = DataLoader(self.trainDataDir, self.imageShape)
 
         self.keep_prob_value = keep_prob_value
 
@@ -128,7 +136,7 @@ class FullyConvNet:
         print('Initializing TF Variables')
         self.sess.run(tf.global_variables_initializer())
         self.sess.run(tf.local_variables_initializer())
-        print('Initialization finished')
+        print('Initialization Completed')
         
         print('Batch Size : ', self.batchSize)
 
@@ -140,7 +148,7 @@ class FullyConvNet:
             batch = 1
             for images,labels in imageBatch:
                 print('\tBackpropagating On Batch : ', batch)
-                loss, _ = self.sess.run([self.cross_entropy, self.optimizer],
+                loss, _ = self.sess.run([self.loss_op, self.optimizer],
                                     feed_dict={self.image_input: images, 
                                                self.correct_label: labels,
                                                self.keep_prob: self.keep_prob_value})
@@ -169,10 +177,10 @@ if __name__=="__main__":
     fcnModelDir = os.getcwd()+'\\model\\FCN'
 
     ImgSize = (160,576) # Size to which resize train images
-
+    maxGradNorm = .1
     print('Creating object for training')
     fcnImageSegmenter = FullyConvNet(sess, modelDir, trainDir, fcnModelDir, 
-                                     2, 'adam', .001, 5, ImgSize)
+                                     2, 'adam', .001, 5, ImgSize, maxGradNorm)
 
     print('Object created successfully')
 
