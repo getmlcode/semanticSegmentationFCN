@@ -161,8 +161,8 @@ class FullyConvNet:
                                                self.correct_label: labels,
                                                self.keep_prob: self.keep_prob_value})
                 totalLoss += loss
-                print("\tLoss = ", loss)
-                print("\tTotal Loss = ", totalLoss)
+                print("\t  Loss = ", loss)
+                print("\t  Total Loss = ", totalLoss)
                 batch+=1
 
             print("\t    Total Loss For Epoch {} = {}".format(epoch+1, totalLoss))
