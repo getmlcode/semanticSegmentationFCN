@@ -88,9 +88,8 @@ class FullyConvNet:
             if self.nArgs == 5:
                 self.optAlgo          = argv[0]
                 self.initLearningRate = argv[1]
-                self.numOfEpochs      = argv[2]
-                self.imageShape       = argv[3]
-                self.maxGradNorm      = argv[4]
+                self.imageShape       = argv[2]
+                self.maxGradNorm      = argv[3]
 
                 self.correct_label = tf.placeholder(tf.float32, [None, self.imageShape[0], 
                                                                  self.imageShape[1], self.numClasses])
@@ -126,10 +125,11 @@ class FullyConvNet:
         except(ValueError):
             exit('Sorry, This Object Was Not Created For Training Purpose !!')
 
-    def trainFCN(self, batchSize, keep_prob_value, metric):
+    def trainFCN(self, batchSize, keep_prob_value, metric, numOfEpochs):
         self.batchSize           = batchSize
         self.keep_prob_value     = keep_prob_value
         self.metric              = metric
+        self.numOfEpochs         = numOfEpochs
 
         #Loads and reshapes images in batches from disk rather than memory
         imageLoader = DataLoader(self.trainDataDir, self.imageShape)
@@ -187,24 +187,34 @@ if __name__=="__main__":
 
     sess = tf.Session()
 
+    # set directories
     modelDir          = os.getcwd()+'\\model\\vgg'
     trainDir          = 'C:\\DataSets\\data_road\\training'
     validationDir     = 'C:\\DataSets\\data_road\\validation'
     fcnModelDir       = os.getcwd()+'\\model\\FCN'
-    batchSize         = 32
-    keepProb          = .5
+    numOfClasses      = 2
+
+    # Set optimzer
+    optAlgo           = 'adam'
+    initLearningRate  = .001
     ImgSize           = (160,576) # Size to which resize train images
     maxGradNorm       = .1
+
+
+    # Set training parameters
+    batchSize         = 32
+    keepProb          = .5
     metric            = 'IOU'
     numOfEpochs       = 5
-    initLearningRate  = .001
+
 
     print('Creating object for training')
     fcnImageSegmenter = FullyConvNet(sess, modelDir, trainDir, 
-                                     fcnModelDir, validationDir, 2)
+                                     fcnModelDir, validationDir, numOfClasses)
     print('Object created successfully')
 
-    fcnImageSegmenter.setOptimizer('adam', initLearningRate, numOfEpochs, 
-                                   ImgSize, maxGradNorm)
+    fcnImageSegmenter.setOptimizer(optAlgo, initLearningRate, ImgSize,
+                                  maxGradNorm)
 
-    fcnImageSegmenter.trainFCN(batchSize, keepProb, metric)
+    fcnImageSegmenter.trainFCN(batchSize, keepProb, metric, 
+                               numOfEpochs)
