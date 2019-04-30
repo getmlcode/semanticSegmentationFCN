@@ -19,7 +19,7 @@ class FullyConvNet:
                 self.numClasses       = argv[4]
 
                 #load/restore Vgg model from vggModelDir and retrieve layers needed for FCN
-                print('Loading VGG model and retrieving layers from : \n{}'.format(self.vggModelDir))
+                print('\nLoading VGG model and retrieving layers from : \n{}'.format(self.vggModelDir))
                 self.vggModel = tf.saved_model.loader.load(self.sess, ['vgg16'], self.vggModelDir)
 
                 self.graph = tf.get_default_graph()
@@ -30,7 +30,7 @@ class FullyConvNet:
                 self.vggLayer7_Out = self.graph.get_tensor_by_name('layer7_out:0')
 
                 #Add FCN layers and skip connections
-                print('Adding FCN layers and skip connections')
+                print('\nAdding FCN layers and skip connections')
                 self.fcn8 = tf.layers.conv2d(self.vggLayer7_Out,
                                              filters=self.numClasses,
                                              kernel_size=1,
@@ -135,7 +135,7 @@ class FullyConvNet:
         imageLoader = DataLoader(self.trainDataDir, self.imageShape)
 
         # Read validation set in memory
-
+        validationImages, validationLabels = [],[]
 
         # Initialize all variables
         print('Initializing TF Variables')
@@ -145,7 +145,7 @@ class FullyConvNet:
         
 
         for epoch in range(self.numOfEpochs):
-            print('\t\t---FCN Training In Progress---')
+            print('\n\t\t---FCN Training In Progress---')
             print('Batch Size : ', self.batchSize)
 
             imageBatch = imageLoader.load_batches_from_disk(self.batchSize)
@@ -172,13 +172,13 @@ class FullyConvNet:
             print('\t    {} On Validation Set In Epoch {} = {}'.format(metric, epoch+1, validationPerf))
 
     
-    def validateModel(validationImages, validationLabels, metric):
+    def validateModel(self, validationImages, validationLabels, metric):
 
         if metric == 'IOU':
-            return semSegMetric(validationImages, validationLabels)
+            return semSegMetric.IntersectionOverUnion(validationImages, validationLabels)
 
     def getSegmentedImage(self, inputImage):
-        print('Loading Model From : ', self.fcnModelDir)
+        print('\nLoading Model From : ', self.fcnModelDir)
 
         return
 
