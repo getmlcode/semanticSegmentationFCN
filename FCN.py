@@ -2,6 +2,8 @@ import tensorflow as tf
 import numpy as np
 import os
 from preprocess import DataLoader
+import semSegMetric
+import matplotlib.pyplot as plt
 
 
 class FullyConvNet:
@@ -9,16 +11,12 @@ class FullyConvNet:
         self.sess = sess
         self.nArgs = len(argv)
         try:
-            if self.nArgs == 9:
+            if self.nArgs == 5:
                 self.vggModelDir      = argv[0]
                 self.trainDataDir     = argv[1]
                 self.fcnModelDir      = argv[2]
-                self.numClasses       = argv[3]
-                self.optAlgo          = argv[4]
-                self.initLearningRate = argv[5]
-                self.numOfEpochs      = argv[6]
-                self.imageShape       = argv[7]
-                self.maxGradNorm      = argv[8]
+                self.validationDir    = argv[3]
+                self.numClasses       = argv[4]
 
                 #load/restore Vgg model from vggModelDir and retrieve layers needed for FCN
                 print('Loading VGG model and retrieving layers from : \n{}'.format(self.vggModelDir))
@@ -85,9 +83,14 @@ class FullyConvNet:
         elif optAlgo == 'mntm':
             return tf.train.MomentumOptimizer(learningRate)
 
-    def setOptimizer(self):
+    def setOptimizer(self,*argv):
         try:
-            if self.nArgs == 9:
+            if self.nArgs == 5:
+                self.optAlgo          = argv[0]
+                self.initLearningRate = argv[1]
+                self.numOfEpochs      = argv[2]
+                self.imageShape       = argv[3]
+                self.maxGradNorm      = argv[4]
 
                 self.correct_label = tf.placeholder(tf.float32, [None, self.imageShape[0], 
                                                                  self.imageShape[1], self.numClasses])
@@ -103,7 +106,8 @@ class FullyConvNet:
                 
                 global_step = tf.Variable(0, trainable=False)
                 learning_rate = tf.train.exponential_decay(self.initLearningRate, global_step, 10000, 0.96)
-                # return optimizer based on optAlgo argument passed during object creation
+                
+                # return optimizer based on optAlgo argument passed
                 self.optFunc = self.getOptimizer(self.loss_op, self.optAlgo, learning_rate)
                 
                 # Refer below links to understand above three lines (hoping they stay alive when you refer it) 
@@ -111,41 +115,45 @@ class FullyConvNet:
                 # https://stackoverflow.com/questions/41166681/what-does-global-step-mean-in-tensorflow
                 # https://www.tensorflow.org/api_docs/python/tf/train/exponential_decay
 
-                # Use gradient clipping to prevet exploding gradient problem
+                # Use gradient clipping to prevent exploding gradient problem
                 # maxGradNorm is the maximum norm for gradient vector
                 trainVars = tf.trainable_variables()
                 grads, _ = tf.clip_by_global_norm(tf.gradients(self.loss_op, trainVars), self.maxGradNorm)
-                self.optimizer = self.optFunc.apply_gradients(zip(grads, trainVars), 
-                                                              global_step = global_step, 
+                self.optimizer = self.optFunc.apply_gradients(zip(grads, trainVars), global_step = global_step, 
                                                               name="fcn_train_op")
             else:
                 raise ValueError('Object Not Meant For Training')
         except(ValueError):
             exit('Sorry, This Object Was Not Created For Training Purpose !!')
 
-    def trainFCN(self,batchSize,keep_prob_value):
-        self.batchSize = batchSize
+    def trainFCN(self, batchSize, keep_prob_value, metric):
+        self.batchSize           = batchSize
+        self.keep_prob_value     = keep_prob_value
+        self.metric              = metric
 
         #Loads and reshapes images in batches from disk rather than memory
         imageLoader = DataLoader(self.trainDataDir, self.imageShape)
 
-        self.keep_prob_value = keep_prob_value
+        # Read validation set in memory
+
 
         # Initialize all variables
-
         print('Initializing TF Variables')
         self.sess.run(tf.global_variables_initializer())
         self.sess.run(tf.local_variables_initializer())
         print('Initialization Completed')
         
-        print('Batch Size : ', self.batchSize)
 
         for epoch in range(self.numOfEpochs):
+            print('\t\t---FCN Training In Progress---')
+            print('Batch Size : ', self.batchSize)
 
             imageBatch = imageLoader.load_batches_from_disk(self.batchSize)
+            
             print("EPOCH {} In Progress...".format(epoch + 1))
             totalLoss = 0
             batch = 1
+
             for images,labels in imageBatch:
                 print('\tBackpropagating On Batch : ', batch)
                 loss, _ = self.sess.run([self.loss_op, self.optimizer],
@@ -153,36 +161,48 @@ class FullyConvNet:
                                                self.correct_label: labels,
                                                self.keep_prob: self.keep_prob_value})
                 totalLoss += loss
-                print("\tLoss = ",loss)
-                print("\tTotal Loss = ",totalLoss)
+                print("\tLoss = ", loss)
+                print("\tTotal Loss = ", totalLoss)
                 batch+=1
 
-            print("Total Loss For Epoch {} = {}".format(epoch+1, totalLoss))
+            print("\t    Total Loss For Epoch {} = {}".format(epoch+1, totalLoss))
             print()
+        
+            validationPerf = self.validateModel(validationImages, validationLabels, self.metric)
+            print('\t    {} On Validation Set In Epoch {} = {}'.format(metric, epoch+1, validationPerf))
 
     
-    def getSegmentedImage(self, inputImage):
-        return
+    def validateModel(validationImages, validationLabels, metric):
 
-    def evaluateModel(self, predictedLabel, trueLabel):
+        if metric == 'IOU':
+            return semSegMetric(validationImages, validationLabels)
+
+    def getSegmentedImage(self, inputImage):
+        print('Loading Model From : ', self.fcnModelDir)
+
         return
 
 
 if __name__=="__main__":
 
-
     sess = tf.Session()
-    modelDir = os.getcwd()+'\\model\\vgg'
-    trainDir = 'C:\\DataSets\\data_road\\training'
-    fcnModelDir = os.getcwd()+'\\model\\FCN'
 
-    ImgSize = (160,576) # Size to which resize train images
-    maxGradNorm = .1
+    modelDir          = os.getcwd()+'\\model\\vgg'
+    trainDir          = 'C:\\DataSets\\data_road\\training'
+    validationDir     = 'C:\\DataSets\\data_road\\validation'
+    fcnModelDir       = os.getcwd()+'\\model\\FCN'
+    batchSize         = 32
+    keepProb          = .5
+    ImgSize           = (160,576) # Size to which resize train images
+    maxGradNorm       = .1
+    metric            = 'IOU'
+
     print('Creating object for training')
-    fcnImageSegmenter = FullyConvNet(sess, modelDir, trainDir, fcnModelDir, 
-                                     2, 'adam', .001, 5, ImgSize, maxGradNorm)
-
+    fcnImageSegmenter = FullyConvNet(sess, modelDir, trainDir, 
+                                     fcnModelDir, validationDir, 2)
     print('Object created successfully')
 
-    fcnImageSegmenter.setOptimizer()
-    fcnImageSegmenter.trainFCN(32, 0.5)
+    fcnImageSegmenter.setOptimizer('adam', .001, 5, ImgSize,
+                                  maxGradNorm)
+
+    fcnImageSegmenter.trainFCN(batchSize, keepProb, metric)
