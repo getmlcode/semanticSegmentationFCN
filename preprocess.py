@@ -1,4 +1,3 @@
-
 import tensorflow as tf
 import re
 import scipy
@@ -6,6 +5,7 @@ import os
 from glob import glob
 import numpy as np
 import random
+from random import sample
 import matplotlib.pyplot as plt
 
 class DataLoader:
@@ -13,6 +13,31 @@ class DataLoader:
     def __init__(self, folder_path, image_shape):
         self.data_folder = folder_path
         self.image_shape = image_shape
+
+    def createValidationSet(self, trainDir, validationDir, numOfFiles):
+        # Select numOfFiles training images and corresponding mask images from trainDir
+        # and place them in validationDir. So validationDir will have both train and mask 
+        # for validation images after this function call
+
+        image_paths = glob(os.path.join(self.data_folder, 'image_2', '*.png'))
+        label_paths = {
+            re.sub(r'_(lane|road)_', '_', os.path.basename(path)): path
+            for path in glob(os.path.join(self.data_folder, 'gt_image_2', '*_road_*.png'))}
+        
+        valImgsPaths = sample(image_paths, numOfFiles)
+
+        # Remove from trainDir and place in validationDir
+        for imgPath in valImgsPaths:
+            print(imgPath)
+            print(os.path.join(validationDir, os.path.basename(imgPath)))
+            os.rename(imgPath,os.path.join(validationDir, os.path.basename(imgPath)))
+            print()
+
+            print(label_paths[os.path.basename(imgPath)])
+            print(os.path.join(validationDir, os.path.basename(label_paths[os.path.basename(imgPath)])))
+            os.rename(label_paths[os.path.basename(imgPath)], 
+                      os.path.join(validationDir, os.path.basename(label_paths[os.path.basename(imgPath)])))
+            print()
 
     def load_batches_from_disk(self,batch_size):
         #Create batches of training data
@@ -52,11 +77,15 @@ class DataLoader:
     def load_batches_from_memory(self,batch_size):
         return
 
+
+
 if __name__=="__main__":
     trainFolder = 'C:\\DataSets\\data_road\\training'
     batchSize = 10
     
     imageLoader = DataLoader(trainFolder,(160,576))
+
+    #imageLoader.createValidationSet(trainFolder, 'C:\\DataSets\\data_road\\validation', 55)
 
 
     print('Batch Size : ', batchSize)
