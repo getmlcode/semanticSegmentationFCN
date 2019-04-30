@@ -196,13 +196,15 @@ if __name__=="__main__":
     ImgSize           = (160,576) # Size to which resize train images
     maxGradNorm       = .1
     metric            = 'IOU'
+    numOfEpochs       = 5
+    initLearningRate  = .001
 
     print('Creating object for training')
     fcnImageSegmenter = FullyConvNet(sess, modelDir, trainDir, 
                                      fcnModelDir, validationDir, 2)
     print('Object created successfully')
 
-    fcnImageSegmenter.setOptimizer('adam', .001, 5, ImgSize,
-                                  maxGradNorm)
+    fcnImageSegmenter.setOptimizer('adam', initLearningRate, numOfEpochs, 
+                                   ImgSize, maxGradNorm)
 
     fcnImageSegmenter.trainFCN(batchSize, keepProb, metric)
