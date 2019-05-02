@@ -71,7 +71,10 @@ class DataLoader:
                 gt_image = np.concatenate((gt_bg, np.invert(gt_bg)), axis=2)
                 
                 images.append(image)
-                gt_images.append(gt_image)
+
+                # Each element in gt_image is [background, road]
+                # for background : [True, False] for Road : [False, True]
+                gt_images.append(gt_image) 
             yield np.array(images), np.array(gt_images)
     
     def load_batches_from_memory(self,batch_size):
