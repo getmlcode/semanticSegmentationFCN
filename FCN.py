@@ -19,8 +19,9 @@ class FullyConvNet:
                 self.numClasses       = argv[4]
 
                 #load/restore Vgg model from vggModelDir and retrieve layers needed for FCN
+                #self.vggModel = 
                 print('\nLoading VGG model and retrieving layers from : \n{}'.format(self.vggModelDir))
-                self.vggModel = tf.saved_model.loader.load(self.sess, ['vgg16'], self.vggModelDir)
+                tf.saved_model.loader.load(self.sess, ['vgg16'], self.vggModelDir)
 
                 self.graph = tf.get_default_graph()
                 self.image_input = self.graph.get_tensor_by_name('image_input:0')
@@ -131,30 +132,30 @@ class FullyConvNet:
         self.metric              = metric
         self.numOfEpochs         = numOfEpochs
 
-        #Loads and reshapes images in batches from disk rather than memory
-        imageLoader = DataLoader(self.trainDataDir, self.imageShape)
-
-        # Read validation set in memory
-        validationImages, validationLabels = [],[]
-
         # Initialize all variables
         print('Initializing TF Variables')
         self.sess.run(tf.global_variables_initializer())
         self.sess.run(tf.local_variables_initializer())
         print('Initialization Completed')
-        
 
+        imageLoader = DataLoader(self.trainDataDir, self.validationDir, self.imageShape)
+
+        #Training Epochs        
         for epoch in range(self.numOfEpochs):
+
+            #Loads and reshapes images in batches from disk rather than memory
+            trainImageBatch = imageLoader.load_train_batches_from_disk(self.batchSize)
+            validationImageBatch = imageLoader.load_validation_batches_from_disk(self.batchSize)
+
             print('\n\t\t---FCN Training In Progress---')
             print('Batch Size : ', self.batchSize)
-
-            imageBatch = imageLoader.load_batches_from_disk(self.batchSize)
             
-            print("EPOCH {} In Progress...".format(epoch + 1))
-            totalLoss = 0
+            print("EPOCH {}/{} In Progress...".format(epoch + 1, self.numOfEpochs))
+            totalLoss = 0 
             batch = 1
 
-            for images,labels in imageBatch:
+            #Iterate through train image batches
+            for images,labels in trainImageBatch:
                 print('\tBackpropagating On Batch : ', batch)
                 loss, _ = self.sess.run([self.loss_op, self.optimizer],
                                     feed_dict={self.image_input: images, 
@@ -163,19 +164,27 @@ class FullyConvNet:
                 totalLoss += loss
                 print("\t  Loss = ", loss)
                 print("\t  Total Loss = ", totalLoss)
+                print("Logits =\n", self.logits)
                 batch+=1
 
             print("\t    Total Loss For Epoch {} = {}".format(epoch+1, totalLoss))
             print()
-        
-            validationPerf = self.validateModel(validationImages, validationLabels, self.metric)
-            print('\t    {} On Validation Set In Epoch {} = {}'.format(metric, epoch+1, validationPerf))
+            
+            #Validation
+            for validationImages,validationLabels in validationImageBatch:
+                predictionLogits = self.sess.run(self.logits, feed_dict={self.image_input: validationImages,
+                                                                         self.keep_prob: 1.0})
+                predictionLabels = self.sess.run(tf.nn.softmax(predictionLogits))
 
+
+                validationPerf = self.validateModel(validationLabels, predictionLabels, self.metric)
+
+                print('\t    {} On Validation Set In Epoch {} = {}'.format(metric, epoch+1, validationPerf))
     
-    def validateModel(self, validationImages, validationLabels, metric):
+    def validateModel(self, validationLabels, predictionLabels, metric):
 
         if metric == 'IOU':
-            return semSegMetric.IntersectionOverUnion(validationImages, validationLabels)
+            return semSegMetric.IntersectionOverUnion(validationLabels, predictionLabels)
 
     def getSegmentedImage(self, inputImage):
         print('\nLoading Model From : ', self.fcnModelDir)
@@ -197,7 +206,7 @@ if __name__=="__main__":
     # Set optimzer
     optAlgo           = 'adam'
     initLearningRate  = .001
-    ImgSize           = (160,576) # Size to which resize train images
+    ImgSize           = (160,576) # Size(any) to which resize train images
     maxGradNorm       = .1
 
 
