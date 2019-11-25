@@ -157,29 +157,73 @@ class FullyConvNet:
             #Iterate through train image batches
             for images,labels in trainImageBatch:
                 print('\tBackpropagating On Batch : ', batch)
-                loss, _ = self.sess.run([self.loss_op, self.optimizer],
-                                    feed_dict={self.image_input: images, 
-                                               self.correct_label: labels,
-                                               self.keep_prob: self.keep_prob_value})
+                loss, _, logits = self.sess.run([self.loss_op, self.optimizer,self.logits],
+                                                feed_dict={self.image_input: images,
+                                                           self.correct_label: labels,
+                                                           self.keep_prob: self.keep_prob_value})
                 totalLoss += loss
+                batch+=1
+
                 print("\t  Loss = ", loss)
                 print("\t  Total Loss = ", totalLoss)
-                print("Logits =\n", self.logits)
-                batch+=1
+
+                #softMax = self.sess.run(tf.nn.softmax(logits.reshape(-1,160,576,2),axis=3))
+                #predictions =  (softMax == softMax.max(axis=3, keepdims=1)) #[True/False] array
+                ##predictions =  (softMax == softMax.max(axis=3, keepdims=1)).astype(float)
+                #correctClassification = np.sum((predictions == labels.reshape(-1,160,576,2)).all(axis=3))
+                #print("Logits =\n", logits)
+                #print("Logits Shape =\n", logits.shape)
+                #print("SoftMax =\n", softMax)
+                #print("SoftMax Shape =\n", softMax.shape)
+                #print("Predictions =\n", predictions)
+                #print("Predictions Shape =\n", predictions.shape)
+                #print("Labels =\n", labels)
+                #print("Labels Shape =\n", labels.shape)
+                #print("Number Of Correct Classification =\n", correctClassification)
+
+                del logits
+                del loss
 
             print("\t    Total Loss For Epoch {} = {}".format(epoch+1, totalLoss))
             print()
             
             #Validation
+            #Read image batches from disk
+            #Accumulate performance for whole validation set
+
+            totCorrectPredictions = 0.0
+            numOfValidationImages = 0
+
+            print('\t    Validation For Epoch {} In Progress..'.format(epoch+1))
+
             for validationImages,validationLabels in validationImageBatch:
-                predictionLogits = self.sess.run(self.logits, feed_dict={self.image_input: validationImages,
-                                                                         self.keep_prob: 1.0})
-                predictionLabels = self.sess.run(tf.nn.softmax(predictionLogits))
+                predictionLogits = self.sess.run(self.logits,
+                                                 feed_dict={self.image_input: validationImages,
+                                                            self.keep_prob: 1.0})
 
+                softMax = self.sess.run(tf.nn.softmax(predictionLogits.reshape(-1,
+                                                                               self.imageShape[0],
+                                                                               self.imageShape[1],
+                                                                               self.numClasses), axis=3))
 
-                validationPerf = self.validateModel(validationLabels, predictionLabels, self.metric)
+                predictionLabels = (softMax == softMax.max(axis=3, keepdims=1))
 
-                print('\t    {} On Validation Set In Epoch {} = {}'.format(metric, epoch+1, validationPerf))
+                validationBatchPerf = self.validateModel(validationLabels.reshape(-1,
+                                                                                  self.imageShape[0],
+                                                                                  self.imageShape[1],
+                                                                                  self.numClasses),
+                                                         predictionLabels,
+                                                         self.metric)
+
+                numOfValidationImages += validationImages.shape[0]
+                totCorrectPredictions += validationBatchPerf * validationImages.shape[0]
+
+                print('|',end=' ')
+
+            validationPerf = totCorrectPredictions/numOfValidationImages
+
+            print('\n\t    Total Number Of Validation Images = ', numOfValidationImages)
+            print('\t    {} On Validation Set In Epoch {} = {}'.format(metric, epoch+1, validationPerf))
     
     def validateModel(self, validationLabels, predictionLabels, metric):
 

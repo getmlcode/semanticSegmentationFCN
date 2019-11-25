@@ -157,8 +157,8 @@ if __name__=="__main__":
             for image,label in zip(images,labels):
                 print('\n\t\tYou Are Seeing Image {} with label :'.format(i))
                 print(label)
-                #plt.imshow(image)
-                #plt.show()
+                plt.imshow(image)
+                plt.show()
                 i+=1
             print('\tTotal Images Seen So Far : ', batchSize*(batch-1) + i-1 )
             print('\n')
