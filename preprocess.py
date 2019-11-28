@@ -85,7 +85,6 @@ class DataLoader:
                 # for background : [True, False] for Road : [False, True]
                 gt_images.append(gt_image) 
             yield np.array(images), np.array(gt_images)
-        return
 
     def load_train_batches_from_disk(self, batch_size):
         #Create batches of training data
@@ -128,16 +127,37 @@ class DataLoader:
                 gt_images.append(gt_image) 
 
             yield np.array(images), np.array(gt_images)
-        return
 
+
+    def load_test_batches_from_disk(self, batch_size):
+        #Create batches of training data
+        #param batch_size: Batch Size
+        #return: Batches of training data 
+
+        #Grab image and label paths
+        image_paths = glob(os.path.join(self.data_folder, 'image_2', '*.png'))
+
+        # Loop through batches and grab images, yielding each batch
+
+        #print(len(image_paths))
+        for batch_i in range(0, len(image_paths), batch_size):
+            images = []
+            for image_file in image_paths[batch_i:batch_i+batch_size]:
+                # Re-size to image_shape
+                image = scipy.misc.imresize(scipy.misc.imread(image_file), self.image_shape)
+                
+                # Dimension batch_size X imageRow X imageCol X 3
+                images.append(image) 
+            yield np.array(images)
 
 
 if __name__=="__main__":
     trainFolder = 'C:\\DataSets\\data_road\\training'
     validationDir = 'C:\\DataSets\\data_road\\validation'
     batchSize = 10
+    imageShape = (80,288)
     
-    imageLoader = DataLoader(trainFolder, validationDir, (160,576))
+    imageLoader = DataLoader(trainFolder, validationDir, imageShape)
 
     #imageLoader.createValidationSet(55)
 

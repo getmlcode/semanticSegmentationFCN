@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+import scipy
 import os
 from preprocess import DataLoader
 import semSegMetric
@@ -18,7 +19,7 @@ class FullyConvNet:
                 self.validationDir    = argv[3]
                 self.numClasses       = argv[4]
 
-                #load/restore Vgg model from vggModelDir and retrieve layers needed for FCN
+                # load/restore Vgg model from vggModelDir and retrieve layers needed for FCN
                 #self.vggModel = 
                 print('\nLoading VGG model and retrieving layers from : \n{}'.format(self.vggModelDir))
                 tf.saved_model.loader.load(self.sess, ['vgg16'], self.vggModelDir)
@@ -30,7 +31,7 @@ class FullyConvNet:
                 self.vggLayer4_Out = self.graph.get_tensor_by_name('layer4_out:0')
                 self.vggLayer7_Out = self.graph.get_tensor_by_name('layer7_out:0')
 
-                #Add FCN layers and skip connections
+                # Add FCN layers and skip connections
                 print('\nAdding FCN layers and skip connections')
                 self.fcn8 = tf.layers.conv2d(self.vggLayer7_Out,
                                              filters=self.numClasses,
@@ -66,7 +67,7 @@ class FullyConvNet:
                                                         padding='SAME',
                                                         name="fcn11")
             elif self.nArgs == 1:
-                #Add code for restoring FCN model for inference
+                # Add code for restoring FCN model for inference
                 print('TODO : Add FCN model restoration code')
                 pass
             else:
@@ -92,8 +93,11 @@ class FullyConvNet:
                 self.imageShape       = argv[2]
                 self.maxGradNorm      = argv[3]
 
-                self.correct_label = tf.placeholder(tf.float32, [None, self.imageShape[0], 
-                                                                 self.imageShape[1], self.numClasses])
+                self.correct_label = tf.placeholder(tf.float32, 
+                                                    [None,
+                                                     self.imageShape[0],
+                                                     self.imageShape[1],
+                                                     self.numClasses])
 
                 # Reshape 4D tensors to 2D, each row represents a pixel, each column a class
                 self.logits = tf.reshape(self.fcn11,[-1, self.numClasses], name="fcn_logits")
@@ -138,14 +142,13 @@ class FullyConvNet:
         self.sess.run(tf.local_variables_initializer())
         print('Initialization Completed')
 
-        imageLoader = DataLoader(self.trainDataDir, self.validationDir, self.imageShape)
+        self.imageLoader = DataLoader(self.trainDataDir, self.validationDir, self.imageShape)
 
-        #Training Epochs        
+        # Training Epochs        
         for epoch in range(self.numOfEpochs):
 
-            #Loads and reshapes images in batches from disk rather than memory
-            trainImageBatch = imageLoader.load_train_batches_from_disk(self.batchSize)
-            validationImageBatch = imageLoader.load_validation_batches_from_disk(self.batchSize)
+            # Loads and reshapes images in batches from disk rather than memory
+            trainImageBatch = self.imageLoader.load_train_batches_from_disk(self.batchSize)
 
             print('\n\t\t---FCN Training In Progress---')
             print('Batch Size : ', self.batchSize)
@@ -154,7 +157,7 @@ class FullyConvNet:
             totalLoss = 0 
             batch = 1
 
-            #Iterate through train image batches
+            # Iterate through train image batches
             for images,labels in trainImageBatch:
                 print('\tBackpropagating On Batch : ', batch)
                 loss, _, logits = self.sess.run([self.loss_op, self.optimizer,self.logits],
@@ -171,69 +174,96 @@ class FullyConvNet:
                 #predictions =  (softMax == softMax.max(axis=3, keepdims=1)) #[True/False] array
                 ##predictions =  (softMax == softMax.max(axis=3, keepdims=1)).astype(float)
                 #correctClassification = np.sum((predictions == labels.reshape(-1,160,576,2)).all(axis=3))
-                #print("Logits =\n", logits)
-                #print("Logits Shape =\n", logits.shape)
-                #print("SoftMax =\n", softMax)
-                #print("SoftMax Shape =\n", softMax.shape)
-                #print("Predictions =\n", predictions)
-                #print("Predictions Shape =\n", predictions.shape)
-                #print("Labels =\n", labels)
-                #print("Labels Shape =\n", labels.shape)
-                #print("Number Of Correct Classification =\n", correctClassification)
 
+                # Delete to save RAM
                 del logits
                 del loss
 
-            print("\t    Total Loss For Epoch {} = {}".format(epoch+1, totalLoss))
-            print()
-            
-            #Validation
-            #Read image batches from disk
-            #Accumulate performance for whole validation set
-
-            totCorrectPredictions = 0.0
-            numOfValidationImages = 0
-
             print('\t    Validation For Epoch {} In Progress..'.format(epoch+1))
+            validationPerformance = self.validateFCN()
 
-            for validationImages,validationLabels in validationImageBatch:
-                predictionLogits = self.sess.run(self.logits,
-                                                 feed_dict={self.image_input: validationImages,
-                                                            self.keep_prob: 1.0})
+            print("\t    Total Loss For Epoch {} = {}".format(epoch+1, totalLoss))
+            print('\t    {} On Validation Set In Epoch {} = {}'.format(self.metric, epoch+1,
+                                                                       validationPerformance))
+        return validationPerformance, totalLoss
 
-                softMax = self.sess.run(tf.nn.softmax(predictionLogits.reshape(-1,
-                                                                               self.imageShape[0],
-                                                                               self.imageShape[1],
-                                                                               self.numClasses), axis=3))
+    def validateFCN(self):
+        # Validation
+        # Read image batches from disk
+        # Accumulate performance for whole validation set
+        validationImageBatch = self.imageLoader.load_validation_batches_from_disk(self.batchSize)
+        totCorrectPredictions = 0.0
+        numOfValidationImages = 0
+        
+        for validationImages,validationLabels in validationImageBatch:
+            predictionLogits = self.sess.run(self.logits,
+                                             feed_dict={self.image_input: validationImages,
+                                                        self.keep_prob: 1.0})
+        
+            softMax = self.sess.run(tf.nn.softmax(predictionLogits.reshape(-1,
+                                                                           self.imageShape[0],
+                                                                           self.imageShape[1],
+                                                                           self.numClasses), axis=3))
+        
+            predictionLabels = (softMax == softMax.max(axis=3, keepdims=1))
+        
+            validationBatchPerf = self.getPerformanceMetric(validationLabels.reshape(-1,
+                                                                                     self.imageShape[0],
+                                                                                     self.imageShape[1],
+                                                                                     self.numClasses),
+                                                            predictionLabels, self.metric)
+        
+            numOfValidationImages += validationImages.shape[0]
+            totCorrectPredictions += validationBatchPerf * validationImages.shape[0]
+        
+            print('|',end=' ')
 
-                predictionLabels = (softMax == softMax.max(axis=3, keepdims=1))
+            for image in validationImages:
+                softMax = self.sess.run(tf.nn.softmax([self.logits]),
+                                        feed_dict={self.image_input: np.expand_dims(image, axis=0),
+                                                   self.keep_prob: 1})
+            
+                softMax = softMax[0][:, 1].reshape(self.imageShape[0], self.imageShape[1])
+                segmentation = (softMax > 0.5).reshape(self.imageShape[0], self.imageShape[1], 1)
+                mask = np.dot(segmentation, np.array([[0, 255, 0, 127]]))
+                mask = scipy.misc.toimage(mask, mode="RGBA")
+                segmentedImage = scipy.misc.toimage(image)
+                segmentedImage.paste(mask, box=None, mask=mask)
+                plt.imshow(segmentedImage)
+                plt.show()
+        
+        validationPerf = totCorrectPredictions/numOfValidationImages
+        
+        print('\n\t    Total Number Of Validation Images = ', numOfValidationImages)
+        return validationPerf
 
-                validationBatchPerf = self.validateModel(validationLabels.reshape(-1,
-                                                                                  self.imageShape[0],
-                                                                                  self.imageShape[1],
-                                                                                  self.numClasses),
-                                                         predictionLabels,
-                                                         self.metric)
-
-                numOfValidationImages += validationImages.shape[0]
-                totCorrectPredictions += validationBatchPerf * validationImages.shape[0]
-
-                print('|',end=' ')
-
-            validationPerf = totCorrectPredictions/numOfValidationImages
-
-            print('\n\t    Total Number Of Validation Images = ', numOfValidationImages)
-            print('\t    {} On Validation Set In Epoch {} = {}'.format(metric, epoch+1, validationPerf))
     
-    def validateModel(self, validationLabels, predictionLabels, metric):
+    def getPerformanceMetric(self, validationLabels, predictionLabels, metric):
 
         if metric == 'IOU':
             return semSegMetric.IntersectionOverUnion(validationLabels, predictionLabels)
 
-    def getSegmentedImage(self, inputImage):
-        print('\nLoading Model From : ', self.fcnModelDir)
+    def generateAndSaveSegmentedTestImages(self, testImgDir, testResultDir):
+        #print('\nLoading Model From : ', self.fcnModelDir)
 
-        return
+        testImageBatch = self.imageLoader.load_test_batches_from_disk(self.batchSize)
+
+        for testImages in testImageBatch:
+            for image in testImages:
+                softMax = self.sess.run(tf.nn.softmax([self.logits]),
+                                        feed_dict={self.image_input: np.expand_dims(image, axis=0),
+                                                   self.keep_prob: 1})
+        
+                softMax = softMax[0][:, 1].reshape(self.imageShape[0], self.imageShape[1])
+                segmentation = (softMax > 0.5).reshape(self.imageShape[0], self.imageShape[1], 1)
+                mask = np.dot(segmentation, np.array([[0, 255, 0, 127]]))
+                mask = scipy.misc.toimage(mask, mode="RGBA")
+                segmentedImage = scipy.misc.toimage(image)
+                segmentedImage.paste(mask, box=None, mask=mask)
+        
+                plt.imshow(segmentedImage)
+                plt.show()
+
 
 
 if __name__=="__main__":
@@ -253,13 +283,11 @@ if __name__=="__main__":
     ImgSize           = (160,576) # Size(any) to which resize train images
     maxGradNorm       = .1
 
-
     # Set training parameters
     batchSize         = 32
     keepProb          = .5
     metric            = 'IOU'
     numOfEpochs       = 5
-
 
     print('Creating object for training')
     fcnImageSegmenter = FullyConvNet(sess, modelDir, trainDir, 
