@@ -136,6 +136,7 @@ class FullyConvNet:
         self.keep_prob_value     = keep_prob_value
         self.metric              = metric
         self.numOfEpochs         = numOfEpochs
+        self.saveModel           = 1
 
         # Initialize all variables
         print('Initializing TF Variables')
@@ -145,6 +146,9 @@ class FullyConvNet:
 
         self.imageLoader = DataLoader(self.trainDataDir, self.validationDir, self.testDataDir, 
                                       self.imageShape)
+        if self.saveModel == 1:
+            modelSaver = tf.train.Saver()
+
         # Training Epochs        
         for epoch in range(self.numOfEpochs):
 
@@ -183,7 +187,13 @@ class FullyConvNet:
                                                                        validationPerformance))
 
 
-            # Add code for saving model weights
+            if (epoch%5==0 or validationPerformance >=0.8) and epoch!=0 and self.saveModel:
+
+                modelSaver.save(sess,self.fcnModelDir + "\\FCN_" 
+                                + self.metric + '_' + str(validationPerformance)
+                                + '_Loss_' + str(totalLoss))
+
+                # Add code for saving model weights
 
         return validationPerformance, totalLoss
 
