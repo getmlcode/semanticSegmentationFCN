@@ -187,7 +187,7 @@ class FullyConvNet:
                                                                        validationPerformance))
 
 
-            if (epoch%5==0 or validationPerformance >=0.8) and epoch!=0 and self.saveModel:
+            if ((epoch+1)%5==0 or validationPerformance >=0.8) and self.saveModel:
 
                 print('Saving Current Model to ',self.fcnModelDir)
 
