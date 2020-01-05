@@ -193,7 +193,7 @@ class FullyConvNet:
                                 + self.metric + '_' + str(validationPerformance)
                                 + '_Loss_' + str(totalLoss))
 
-                # Add code for saving model weights
+                # Add code for saving model weight
 
         return validationPerformance, totalLoss
 
