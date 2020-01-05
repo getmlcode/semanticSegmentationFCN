@@ -189,6 +189,8 @@ class FullyConvNet:
 
             if (epoch%5==0 or validationPerformance >=0.8) and epoch!=0 and self.saveModel:
 
+                print('Saving Current Model to ',self.fcnModelDir)
+
                 modelSaver.save(sess,self.fcnModelDir + "\\FCN_" 
                                 + self.metric + '_' + str(validationPerformance)
                                 + '_Loss_' + str(totalLoss))
