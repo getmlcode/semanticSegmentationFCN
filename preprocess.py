@@ -11,10 +11,11 @@ import itertools
 
 class DataLoader:
 
-    def __init__(self, folder_path, validationDir, image_shape):
-        self.data_folder = folder_path
-        self.image_shape = image_shape
-        self.validationDir = validationDir
+    def __init__(self, folder_path, validationDir, testDataDir, image_shape):
+        self.data_folder    = folder_path
+        self.image_shape    = image_shape
+        self.validationDir  = validationDir
+        self.testDataDir    = testDataDir
 
     def createValidationSet(self, numOfFiles):
         #Creates directory if it doesn't exist
@@ -135,7 +136,7 @@ class DataLoader:
         #return: Batches of training data 
 
         #Grab image and label paths
-        image_paths = glob(os.path.join(self.data_folder, 'image_2', '*.png'))
+        image_paths = glob(os.path.join(self.testDataDir, 'image_2', '*.png'))
 
         # Loop through batches and grab images, yielding each batch
 
@@ -154,6 +155,8 @@ class DataLoader:
 if __name__=="__main__":
     trainFolder = 'C:\\DataSets\\data_road\\training'
     validationDir = 'C:\\DataSets\\data_road\\validation'
+    testDataDir       = 'C:\\DataSets\\data_road\\testing'
+
     batchSize = 10
     imageShape = (80,288)
     
