@@ -73,13 +73,16 @@ class FullyConvNet:
                 self.inferenceModelDir = argv[0]
                 self.modelName = argv[1]
 
-                netLoader = tf.train.import_meta_graph(os.path.join(self.inferenceModelDir, args.model+'.meta'))
+                netLoader = tf.train.import_meta_graph(os.path.join(self.inferenceModelDir, 
+                                                                    self.modelName +'.meta'))
+                self.graph = tf.get_default_graph()
                 self.image_input = self.graph.get_tensor_by_name('image_input:0')
-                self.logits = self.graph.get_tensor_by_name('fcn_logits')
+                self.logits = self.graph.get_tensor_by_name('fcn_logits:0')
+                self.keep_prob = self.graph.get_tensor_by_name('keep_prob:0')
 
-                netLoader.restore(sess,os.path.join(args.dir,args.model))
-
-                pass
+                #2nd argument should be everything before .data
+                netLoader.restore(sess,os.path.join(self.inferenceModelDir, 
+                                                    self.modelName))
             else:
                 print('Invalid Number of Arguments')
                 raise ValueError('Invalid Number of Arguments')
@@ -196,8 +199,8 @@ class FullyConvNet:
                                                                        validationPerformance))
 
 
-            #if ((epoch+1)%5==0 or validationPerformance >=0.8) and self.saveModel:
-            if (epoch+1)%2==0 and self.saveModel:
+            if ((epoch+1)%2==0 or validationPerformance >=0.8) and self.saveModel:
+            #if (epoch+1)%2==0 and self.saveModel:
                 print('Saving Current Model to ',self.fcnModelDir)
 
                 modelSaver.save(sess,self.fcnModelDir + "\\FCN_" 
@@ -300,35 +303,46 @@ class FullyConvNet:
 
 if __name__=="__main__":
 
-    sess = tf.Session()
+    #sess = tf.Session()
 
-    # set directories
-    modelDir          = os.getcwd()+'\\model\\vgg'
-    trainDir          = 'C:\\DataSets\\data_road\\training'
-    validationDir     = 'C:\\DataSets\\data_road\\validation'
-    testDataDir       = 'C:\\DataSets\\data_road\\testing'
-    testResultDir     = 'C:\\DataSets\\data_road\\testResults'
-    fcnModelDir       = os.getcwd()+'\\model\\FCN'
-    numOfClasses      = 2
+    ## set directories
+    #modelDir          = os.getcwd()+'\\model\\vgg'
+    #trainDir          = 'C:\\DataSets\\data_road\\training'
+    #validationDir     = 'C:\\DataSets\\data_road\\validation'
+    #testDataDir       = 'C:\\DataSets\\data_road\\testing'
+    #testResultDir     = 'C:\\DataSets\\data_road\\testResults'
+    #fcnModelDir       = os.getcwd()+'\\model\\FCN'
+    #numOfClasses      = 2
 
-    # Set optimzer
-    optAlgo           = 'adam'
-    initLearningRate  = .001
-    ImgSize           = (160,576) # Size(any) to which resize train images
-    maxGradNorm       = .1
+    ## Set optimzer
+    #optAlgo           = 'adam'
+    #initLearningRate  = .001
+    #ImgSize           = (160,576) # Size(any) to which resize train images
+    #maxGradNorm       = .1
 
-    # Set training parameters
-    batchSize         = 32
-    keepProb          = .5
-    metric            = 'IOU'
-    numOfEpochs       = 2
+    ## Set training parameters
+    #batchSize         = 32
+    #keepProb          = .5
+    #metric            = 'IOU'
+    #numOfEpochs       = 5
 
-    print('Creating object for training')
-    fcnImageSegmenter = FullyConvNet(sess, modelDir, trainDir, fcnModelDir, 
-                                     validationDir, testDataDir, numOfClasses)
-    print('Object created successfully')
+    #print('Creating object for training')
+    #fcnImageSegmenter = FullyConvNet(sess, modelDir, trainDir, fcnModelDir, 
+    #                                 validationDir, testDataDir, numOfClasses)
+    #print('Object created successfully')
 
-    fcnImageSegmenter.setOptimizer(optAlgo, initLearningRate, ImgSize,maxGradNorm)
+    #fcnImageSegmenter.setOptimizer(optAlgo, initLearningRate, ImgSize,maxGradNorm)
 
-    fcnImageSegmenter.trainFCN(batchSize, keepProb, metric,  numOfEpochs)
+    #fcnImageSegmenter.trainFCN(batchSize, keepProb, metric,  numOfEpochs)
+
+    
+    inferSession = tf.Session()
+
+    inferModelDir =  os.getcwd()+'\\model\\FCN\\Infer'
+    inferModelName = 'FCN_IOU_0.7683481553708896_CrossEntropyLoss_6.4122965186834335'
+
+    fcnImageSegmenter = FullyConvNet(inferSession, inferModelDir, inferModelName)
+
+
+
 
