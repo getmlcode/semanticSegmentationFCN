@@ -73,11 +73,11 @@ class FullyConvNet:
                 self.inferenceModelDir = argv[0]
                 self.modelName = argv[1]
 
-                self.netLoader = tf.train.import_meta_graph(os.path.join(self.inferenceModelDir, args.model+'.meta'))
+                netLoader = tf.train.import_meta_graph(os.path.join(self.inferenceModelDir, args.model+'.meta'))
                 self.image_input = self.graph.get_tensor_by_name('image_input:0')
                 self.logits = self.graph.get_tensor_by_name('fcn_logits')
 
-                loader.restore(sess,os.path.join(args.dir,args.model))
+                netLoader.restore(sess,os.path.join(args.dir,args.model))
 
                 pass
             else:
