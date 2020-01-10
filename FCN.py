@@ -67,9 +67,18 @@ class FullyConvNet:
                                                         strides=(8, 8),
                                                         padding='SAME',
                                                         name="fcn11")
-            elif self.nArgs == 1:
-                # Add code for restoring FCN model for inference
-                print('TODO : Add FCN model restoration code')
+            elif self.nArgs == 2:
+                # Code for creating object for inference
+
+                self.inferenceModelDir = argv[0]
+                self.modelName = argv[1]
+
+                self.netLoader = tf.train.import_meta_graph(os.path.join(self.inferenceModelDir, args.model+'.meta'))
+                self.image_input = self.graph.get_tensor_by_name('image_input:0')
+                self.logits = self.graph.get_tensor_by_name('fcn_logits')
+
+                loader.restore(sess,os.path.join(args.dir,args.model))
+
                 pass
             else:
                 print('Invalid Number of Arguments')
@@ -187,13 +196,13 @@ class FullyConvNet:
                                                                        validationPerformance))
 
 
-            if ((epoch+1)%5==0 or validationPerformance >=0.8) and self.saveModel:
-
+            #if ((epoch+1)%5==0 or validationPerformance >=0.8) and self.saveModel:
+            if (epoch+1)%2==0 and self.saveModel:
                 print('Saving Current Model to ',self.fcnModelDir)
 
                 modelSaver.save(sess,self.fcnModelDir + "\\FCN_" 
                                 + self.metric + '_' + str(validationPerformance)
-                                + '_Loss_' + str(totalLoss))
+                                + '_CrossEntropyLoss_' + str(totalLoss))
 
                 # Add code for saving model weight
 
@@ -237,8 +246,8 @@ class FullyConvNet:
             # Display segmented results
             for image,imageLogit in zip(validationImages, imageLogits):
                 segmentedImage = self.getSegmentedImage(image, imageLogit)
-                plt.imshow(segmentedImage)
-                plt.show()
+                #plt.imshow(segmentedImage)
+                #plt.show()
 
             del imageLogits, validationImages
         
@@ -312,7 +321,7 @@ if __name__=="__main__":
     batchSize         = 32
     keepProb          = .5
     metric            = 'IOU'
-    numOfEpochs       = 5
+    numOfEpochs       = 2
 
     print('Creating object for training')
     fcnImageSegmenter = FullyConvNet(sess, modelDir, trainDir, fcnModelDir, 
@@ -322,3 +331,4 @@ if __name__=="__main__":
     fcnImageSegmenter.setOptimizer(optAlgo, initLearningRate, ImgSize,maxGradNorm)
 
     fcnImageSegmenter.trainFCN(batchSize, keepProb, metric,  numOfEpochs)
+
