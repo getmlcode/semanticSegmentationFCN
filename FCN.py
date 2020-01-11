@@ -145,12 +145,12 @@ class FullyConvNet:
         except(ValueError):
             exit('Sorry, This Object Was Not Created For Training Purpose !!')
 
-    def trainFCN(self, batchSize, keep_prob_value, metric, numOfEpochs):
+    def trainFCN(self, batchSize, keep_prob_value, metric, numOfEpochs, saveModel):
         self.batchSize           = batchSize
         self.keep_prob_value     = keep_prob_value
         self.metric              = metric
         self.numOfEpochs         = numOfEpochs
-        self.saveModel           = 1
+        self.saveModel           = saveModel
 
         # Initialize all variables
         print('Initializing TF Variables')
@@ -310,37 +310,38 @@ class FullyConvNet:
 
 if __name__=="__main__":
 
-    #sess = tf.Session()
+    sess = tf.Session()
 
-    ## set directories
-    #modelDir          = os.getcwd()+'\\model\\vgg'
-    #trainDir          = 'C:\\DataSets\\data_road\\training'
-    #validationDir     = 'C:\\DataSets\\data_road\\validation'
-    #testDataDir       = 'C:\\DataSets\\data_road\\testing'
-    #testResultDir     = 'C:\\DataSets\\data_road\\testResults'
-    #fcnModelDir       = os.getcwd()+'\\model\\FCN'
-    #numOfClasses      = 2
+    # set directories
+    modelDir          = os.getcwd()+'\\model\\vgg'
+    trainDir          = 'C:\\DataSets\\data_road\\training'
+    validationDir     = 'C:\\DataSets\\data_road\\validation'
+    testDataDir       = 'C:\\DataSets\\data_road\\testing'
+    testResultDir     = 'C:\\DataSets\\data_road\\testResults'
+    fcnModelDir       = os.getcwd()+'\\model\\FCN'
+    numOfClasses      = 2
 
-    ## Set optimzer
-    #optAlgo           = 'adam'
-    #initLearningRate  = .001
+    # Set optimzer
+    optAlgo           = 'adam'
+    initLearningRate  = .001
     ImgSize           = (160,576) # Size(any) to which resize train images
-    #maxGradNorm       = .1
+    maxGradNorm       = .1
 
-    ## Set training parameters
-    #batchSize         = 32
-    #keepProb          = .5
-    #metric            = 'IOU'
-    #numOfEpochs       = 5
+    # Set training parameters
+    batchSize         = 32
+    keepProb          = .5
+    metric            = 'IOU'
+    numOfEpochs       = 5
+    saveModel         = 1
 
-    #print('Creating object for training')
-    #fcnImageSegmenter = FullyConvNet(sess, modelDir, trainDir, fcnModelDir, 
-    #                                 validationDir, testDataDir, numOfClasses)
-    #print('Object created successfully')
+    print('Creating object for training')
+    fcnImageSegmenter = FullyConvNet(sess, modelDir, trainDir, fcnModelDir, 
+                                     validationDir, testDataDir, numOfClasses)
+    print('Object created successfully')
 
-    #fcnImageSegmenter.setOptimizer(optAlgo, initLearningRate, ImgSize,maxGradNorm)
+    fcnImageSegmenter.setOptimizer(optAlgo, initLearningRate, ImgSize,maxGradNorm)
 
-    #fcnImageSegmenter.trainFCN(batchSize, keepProb, metric,  numOfEpochs)
+    fcnImageSegmenter.trainFCN(batchSize, keepProb, metric,  numOfEpochs, saveModel)
 
     
     inferSession        = tf.Session()
