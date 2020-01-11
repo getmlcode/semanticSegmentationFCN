@@ -25,12 +25,12 @@ class FullyConvNet:
                 print('\nLoading VGG model and retrieving layers from : \n{}'.format(self.vggModelDir))
                 tf.saved_model.loader.load(self.sess, ['vgg16'], self.vggModelDir)
 
-                self.graph = tf.get_default_graph()
-                self.image_input = self.graph.get_tensor_by_name('image_input:0')
-                self.keep_prob = self.graph.get_tensor_by_name('keep_prob:0')
-                self.vggLayer3_Out = self.graph.get_tensor_by_name('layer3_out:0')
-                self.vggLayer4_Out = self.graph.get_tensor_by_name('layer4_out:0')
-                self.vggLayer7_Out = self.graph.get_tensor_by_name('layer7_out:0')
+                self.graph            = tf.get_default_graph()
+                self.image_input      = self.graph.get_tensor_by_name('image_input:0')
+                self.keep_prob        = self.graph.get_tensor_by_name('keep_prob:0')
+                self.vggLayer3_Out    = self.graph.get_tensor_by_name('layer3_out:0')
+                self.vggLayer4_Out    = self.graph.get_tensor_by_name('layer4_out:0')
+                self.vggLayer7_Out    = self.graph.get_tensor_by_name('layer7_out:0')
 
                 # Add FCN layers and skip connections
                 print('\nAdding FCN layers and skip connections')
@@ -67,11 +67,13 @@ class FullyConvNet:
                                                         strides=(8, 8),
                                                         padding='SAME',
                                                         name="fcn11")
-            elif self.nArgs == 2:
+            elif self.nArgs == 4:
                 # Code for creating object for inference
 
-                self.inferenceModelDir = argv[0]
-                self.modelName = argv[1]
+                self.inferenceModelDir  = argv[0]
+                self.modelName          = argv[1]
+                self.imageShape         = argv[2]
+                self.numClasses         = argv[3]
 
                 netLoader = tf.train.import_meta_graph(os.path.join(self.inferenceModelDir, 
                                                                     self.modelName +'.meta'))
@@ -242,7 +244,7 @@ class FullyConvNet:
 
             del predictionLabels, softMax
 
-            imageLogits = predictionLogits.reshape(-1, self.imageShape[0],self.imageShape[1],self.numClasses)
+            imageLogits = predictionLogits.reshape(-1, self.imageShape[0], self.imageShape[1], self.numClasses)
 
             del predictionLogits
 
@@ -266,15 +268,20 @@ class FullyConvNet:
         segmentation = (prediction == True).reshape(self.imageShape[0], self.imageShape[1], 1)
         mask = np.dot(segmentation, np.array([[0, 255, 0, 127]]))
         mask = scipy.misc.toimage(mask, mode="RGBA")
-        segmentedImage = scipy.misc.toimage(image)
+        segmentedImage = scipy.misc.toimage(image) 
         segmentedImage.paste(mask, box=None, mask=mask)
 
         return segmentedImage
     
     def segmentThisImage(self, image):
 
-        #Add code for producing logits after loading trained FCN model weights
-        segmentedImage = self.getSegmentedImage(image, imageLogit)
+        predictionLogits = self.sess.run(self.logits,feed_dict={self.image_input: np.expand_dims(image, axis=0),
+                                                                self.keep_prob: 1.0})
+
+        imageLogit = predictionLogits.reshape(-1, self.imageShape[0], self.imageShape[1], 
+                                               self.numClasses)
+
+        segmentedImage = self.getSegmentedImage(image, imageLogit[0])
 
         return segmentedImage
 
@@ -317,7 +324,7 @@ if __name__=="__main__":
     ## Set optimzer
     #optAlgo           = 'adam'
     #initLearningRate  = .001
-    #ImgSize           = (160,576) # Size(any) to which resize train images
+    ImgSize           = (160,576) # Size(any) to which resize train images
     #maxGradNorm       = .1
 
     ## Set training parameters
@@ -336,13 +343,17 @@ if __name__=="__main__":
     #fcnImageSegmenter.trainFCN(batchSize, keepProb, metric,  numOfEpochs)
 
     
-    inferSession = tf.Session()
+    inferSession        = tf.Session()
 
-    inferModelDir =  os.getcwd()+'\\model\\FCN\\Infer'
-    inferModelName = 'FCN_IOU_0.7683481553708896_CrossEntropyLoss_6.4122965186834335'
+    inferModelDir       =  os.getcwd()+'\\model\\FCN\\Infer'
+    inferModelName      = 'FCN_IOU_0.7683481553708896_CrossEntropyLoss_6.4122965186834335'
 
-    fcnImageSegmenter = FullyConvNet(inferSession, inferModelDir, inferModelName)
+    fcnInferImgSegment  = FullyConvNet(inferSession, inferModelDir, inferModelName, ImgSize, 2)
 
+    image_file          = 'C:\\DataSets\\data_road\\testing\\image_2\\um_000013.png'
 
-
+    testImage           = scipy.misc.imresize(scipy.misc.imread(image_file), ImgSize)
+    segmentedTestImg    = fcnInferImgSegment.segmentThisImage(testImage)
+    plt.imshow(segmentedTestImg)
+    plt.show()
 
