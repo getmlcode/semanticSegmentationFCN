@@ -360,7 +360,6 @@ if __name__=="__main__":
     print('Object created successfully')
 
     fcnImageSegmenter.setOptimizer(optAlgo, initLearningRate, ImgSize,maxGradNorm)
-
     fcnImageSegmenter.trainFCN(batchSize, keepProb, metric, numOfEpochs, saveModel)
 
     
