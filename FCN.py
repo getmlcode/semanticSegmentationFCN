@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 import scipy
 import os
+import glob
 from preprocess import DataLoader
 import semSegMetric
 import matplotlib.pyplot as plt
@@ -146,7 +147,7 @@ class FullyConvNet:
         except(ValueError):
             exit('Sorry, This Object Was Not Created For Training Purpose !!')
 
-    def trainFCN(self, batchSize, keep_prob_value, metric, numOfEpochs, saveModel):
+    def trainFCN(self, batchSize, keep_prob_value, metric, numOfEpochs, saveModel, perfThresh):
         self.batchSize           = batchSize
         self.keep_prob_value     = keep_prob_value
         self.metric              = metric
@@ -201,13 +202,12 @@ class FullyConvNet:
             print('\t    {} On Validation Set In Epoch {} = {}'.format(self.metric, epoch+1,
                                                                        validationPerformance))
 
-
-            if ((epoch+1)%2==0 or validationPerformance >=0.8) and self.saveModel:
-                print('\n\tSaving Current Model to ',self.fcnModelDir)
-
-                modelSaver.save(sess,self.fcnModelDir + "\\FCN_" 
-                                + self.metric + '_' + str(validationPerformance)
-                                + '_CrossEntropyLoss_' + str(totalLoss))
+            if self.saveModel:
+                if ((epoch+1)%5==0 or validationPerformance >= perfThresh):
+                    print('\n\tSaving Current Model to ',self.fcnModelDir)
+                    modelSaver.save(sess,self.fcnModelDir + "\\FCN_" 
+                                    + self.metric + '_' + str(validationPerformance)
+                                    + '_CrossEntropyLoss_' + str(totalLoss))
 
         return validationPerformance, totalLoss
 
@@ -259,9 +259,37 @@ class FullyConvNet:
         return validationPerf, numOfValidationImages
     
     def moveToInferenceDir(self, topN):
-        # Move top topN performing models to inference director
+        # Move top topN performing models to inference directory
 
-        return
+        wtFileNameList = glob.glob(self.fcnModelDir+'//*.data*')
+
+        # If thee are less number of models then place all of them
+        # into inference directory
+        topN = len(wtFileNameList) if topN > len(wtFileNameList) else topN
+        perfMetricList = []
+
+        # Extract perfomance metric value
+        for wtFileName in wtFileNameList:
+            fileName = wtFileName.split('\\')[-1]
+            modelPerfMetric = float(fileName.split('_')[2])
+
+            perfMetricList.append(modelPerfMetric)
+
+        # Resverse sort perfMetricList
+        perfMetricList.sort(reverse=True)
+
+        # Place top topN performing models in inference directory
+        for rank in range(topN):
+            perfMetricVal = perfMetricList[rank]
+
+            # Get filenames of model with given performance metric value
+            modelFileNames = glob.glob(self.fcnModelDir+'//*'+str(perfMetricVal)+'*')
+
+            for fileName in modelFileNames:
+                fileExtension = fileName.split('.')[-1]
+                # Move current file to inference directory
+                os.replace(fileName, self.fcnInferDir + '//' + self.metric + '_' 
+                           + perfMetricVal + '.' + fileExtension)
 
     def getSegmentedImage(self, image, imageLogit):
 
@@ -352,6 +380,7 @@ if __name__=="__main__":
     metric            = 'IOU'
     numOfEpochs       = 5
     saveModel         = 1
+    perfThresh        = 0.8
 
     print('Creating object for training')
     fcnImageSegmenter = FullyConvNet(sess, modelDir, trainDir, fcnModelDir, 
@@ -360,7 +389,8 @@ if __name__=="__main__":
     print('Object created successfully')
 
     fcnImageSegmenter.setOptimizer(optAlgo, initLearningRate, ImgSize,maxGradNorm)
-    fcnImageSegmenter.trainFCN(batchSize, keepProb, metric, numOfEpochs, saveModel)
+    fcnImageSegmenter.trainFCN(batchSize, keepProb, metric, numOfEpochs, saveModel, 
+                               perfThresh)
 
     
     inferSession        = tf.Session()
