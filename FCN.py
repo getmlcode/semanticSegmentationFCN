@@ -93,7 +93,7 @@ class FullyConvNet:
         except(ValueError):
             exit('Failed To Construct Object')
 
-    def getOptimizer(self,loss_op, optAlgo, learningRate):
+    def getOptimizer(self, loss_op, optAlgo, learningRate):
 
         if optAlgo == 'adam':
             return tf.train.AdamOptimizer(learningRate)
@@ -102,9 +102,9 @@ class FullyConvNet:
         elif optAlgo == 'mntm':
             return tf.train.MomentumOptimizer(learningRate)
 
-    def setOptimizer(self,*argv):
+    def setOptimizer(self, *argv):
         try:
-            if self.nArgs == 6:
+            if self.nArgs == 7:
                 self.optAlgo          = argv[0]
                 self.initLearningRate = argv[1]
                 self.imageShape       = argv[2]
@@ -328,7 +328,6 @@ class FullyConvNet:
         # Read images in given imageDir directoy and return an array of masked 
         # segmented images
 
-
         return
 
     def generateAndSaveSegmentedTestImages(self, testResultDir):
@@ -378,7 +377,7 @@ if __name__=="__main__":
     batchSize         = 32
     keepProb          = .5
     metric            = 'IOU'
-    numOfEpochs       = 5
+    numOfEpochs       = 20
     saveModel         = 1
     perfThresh        = 0.8
 
@@ -398,7 +397,8 @@ if __name__=="__main__":
     inferModelDir       =  os.getcwd()+'\\model\\FCN\\Infer'
     inferModelName      = 'FCN_IOU_0.7683481553708896_CrossEntropyLoss_6.4122965186834335'
 
-    fcnInferImgSegment  = FullyConvNet(inferSession, inferModelDir, inferModelName, ImgSize, 2)
+    fcnInferImgSegment  = FullyConvNet(inferSession, inferModelDir, inferModelName, ImgSize, 
+                                       numOfClasses)
 
     image_file          = 'C:\\DataSets\\data_road\\testing\\image_2\\um_000013.png'
 
