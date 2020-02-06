@@ -7,20 +7,20 @@ from preprocess import DataLoader
 import semSegMetric
 import matplotlib.pyplot as plt
 
-
 class FullyConvNet:
     def __init__(self, sess, *argv):
         self.sess = sess
         self.nArgs = len(argv)
         try:
-            if self.nArgs == 7:
+            if self.nArgs == 8:
                 self.vggModelDir        = argv[0]
                 self.trainDataDir       = argv[1]
-                self.fcnModelDir        = argv[2]
+                self.trainLabelDir      = argv[2]
                 self.validationDir      = argv[3]
-                self.testDataDir        = argv[4]
-                self.fcnInferDir        = argv[5]
-                self.numClasses         = argv[6]
+                self.fcnModelDir        = argv[4]
+                self.testDataDir        = argv[5]
+                self.fcnInferDir        = argv[6]
+                self.numClasses         = argv[7]
 
                 # load/restore Vgg model from vggModelDir and retrieve layers needed for FCN
                 #self.vggModel = 
@@ -120,9 +120,12 @@ class FullyConvNet:
                 self.logits = tf.reshape(self.fcn11,[-1, self.numClasses], name="fcn_logits")
                 self.correct_label_reshaped = tf.reshape(self.correct_label, [-1, self.numClasses])
 
-                # Calculate cross entropy loss using actual labels
+                # Applies softmax for each pixel prediction to get probability distribution over classes
+                # for that label and then cross entropy with its one-hot-label
+
                 self.cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=self.logits,
                                                                         labels=self.correct_label_reshaped[:])
+                # Calculate mean cross entropy loss
                 self.loss_op = tf.reduce_mean(self.cross_entropy, name="fcn_loss")
                 
                 global_step = tf.Variable(0, trainable=False)
@@ -160,12 +163,13 @@ class FullyConvNet:
         self.sess.run(tf.local_variables_initializer())
         print('Initialization Completed')
 
-        self.imageLoader = DataLoader(self.trainDataDir, self.validationDir, self.testDataDir, 
+        self.imageLoader = DataLoader(self.trainDataDir, self.trainLabelDir, 
+                                      self.validationDir, self.testDataDir, 
                                       self.imageShape)
         if self.saveModel == 1:
             modelSaver = tf.train.Saver()
 
-        # Training Epochs        
+        # Training Epochs
         for epoch in range(self.numOfEpochs):
 
             # Loads and reshapes images in batches from disk rather than memory
@@ -175,7 +179,7 @@ class FullyConvNet:
             print('Batch Size : ', self.batchSize)
             
             print("EPOCH {}/{} In Progress...".format(epoch + 1, self.numOfEpochs))
-            totalLoss = 0 
+            totalLoss = 0
             batch = 1
 
             # Iterate through train image batches
@@ -205,9 +209,11 @@ class FullyConvNet:
             if self.saveModel:
                 if ((epoch+1)%5==0 or validationPerformance >= perfThresh):
                     print('\n\tSaving Current Model to ',self.fcnModelDir)
-                    modelSaver.save(sess,self.fcnModelDir + "\\FCN_" 
-                                    + self.metric + '_' + str(validationPerformance)
-                                    + '_CrossEntropyLoss_' + str(totalLoss))
+
+                    modelFullName = self.fcnModelDir + "\\FCN_" + self.metric + '_' + \
+                        str(validationPerformance) + '_CrossEntropyLoss_' + str(totalLoss)
+
+                    modelSaver.save(sess, modelFullName)
 
         return validationPerformance, totalLoss
 
@@ -230,7 +236,7 @@ class FullyConvNet:
                                                                            self.numClasses), axis=3))
         
             predictionLabels = (softMax == softMax.max(axis=3, keepdims=1))
-        
+
             validationBatchPerf = self.getPerformanceMetric(validationLabels.reshape(-1,
                                                                                      self.imageShape[0],
                                                                                      self.imageShape[1],
@@ -249,6 +255,7 @@ class FullyConvNet:
             # Display segmented results
             for image,imageLogit in zip(validationImages, imageLogits):
                 segmentedImage = self.getSegmentedImage(image, imageLogit)
+
                 #plt.imshow(segmentedImage)
                 #plt.show()
 
@@ -296,7 +303,7 @@ class FullyConvNet:
         # Input
         #       image       :   single image
         #       imageLogit  :   logit values for image pixel elements
-        # Output 
+        # Output
         #       segmented image with overlay mask
 
         softMax = self.sess.run(tf.nn.softmax(imageLogit, axis = 2))
@@ -305,7 +312,7 @@ class FullyConvNet:
         segmentation = (prediction == True).reshape(self.imageShape[0], self.imageShape[1], 1)
         mask = np.dot(segmentation, np.array([[0, 255, 0, 127]]))
         mask = scipy.misc.toimage(mask, mode="RGBA")
-        segmentedImage = scipy.misc.toimage(image) 
+        segmentedImage = scipy.misc.toimage(image)
         segmentedImage.paste(mask, box=None, mask=mask)
 
         return segmentedImage
@@ -355,41 +362,45 @@ class FullyConvNet:
 
 if __name__=="__main__":
 
-    sess = tf.Session()
+    trainSession = tf.Session()
 
     # set directories
-    modelDir          = os.getcwd()+'\\model\\vgg'
-    trainDir          = 'C:\\DataSets\\data_road\\training'
-    validationDir     = 'C:\\DataSets\\data_road\\validation'
-    testDataDir       = 'C:\\DataSets\\data_road\\testing'
-    testResultDir     = 'C:\\DataSets\\data_road\\testing\\testResults'
-    fcnModelDir       = os.getcwd()+'\\model\\FCN'
-    fcnInferDir       = os.getcwd()+'\\model\\FCN\\Infer'
-    numOfClasses      = 2
+    modelDir            = os.getcwd()+'\\model\\vgg'
+    trainDir            = 'C:\\DataSets\\data_road\\training\\image_2'
+    trainLabelDir       = 'C:\\DataSets\\data_road\\training\\gt_image_2'
+    validationDir       = 'C:\\DataSets\\data_road\\validation'
+    testDataDir         = 'C:\\DataSets\\data_road\\testing'
+    testResultDir       = 'C:\\DataSets\\data_road\\testing\\testResults'
+    fcnModelDir         = os.getcwd()+'\\model\\FCN'
+    fcnInferDir         = os.getcwd()+'\\model\\FCN\\Infer'
+    numOfClasses        = 2
 
     # Set optimzer
-    optAlgo           = 'adam'
-    initLearningRate  = .001
-    ImgSize           = (160,576) # Size(any) to which resize train images
-    maxGradNorm       = .1
+    optAlgo             = 'adam'
+    initLearningRate    = .001
+    ImgSize             = (160,576) # Size(any) to which resize train images
+    maxGradNorm         = .1
 
     # Set training parameters
-    batchSize         = 32
-    keepProb          = .5
-    metric            = 'IOU'
-    numOfEpochs       = 20
-    saveModel         = 1
-    perfThresh        = 0.8
+    batchSize           = 32
+    keepProb            = .5
+    metric              = 'IOU'
+    numOfEpochs         = 20
+    saveModel           = 1
+    perfThresh          = 0.8
 
     print('Creating object for training')
-    fcnImageSegmenter = FullyConvNet(sess, modelDir, trainDir, fcnModelDir, 
-                                     validationDir, testDataDir, fcnInferDir, 
-                                     numOfClasses)
+    fcnImageSegmenter = FullyConvNet(trainSession, modelDir, trainDir, trainLabelDir, 
+                                     validationDir, fcnModelDir, testDataDir, 
+                                     fcnInferDir, numOfClasses)
     print('Object created successfully')
 
     fcnImageSegmenter.setOptimizer(optAlgo, initLearningRate, ImgSize,maxGradNorm)
     fcnImageSegmenter.trainFCN(batchSize, keepProb, metric, numOfEpochs, saveModel, 
                                perfThresh)
+    fcnImageSegmenter.generateAndSaveSegmentedTestImages(testResultDir)
+
+    trainSession.close()
 
     
     inferSession        = tf.Session()
@@ -406,3 +417,5 @@ if __name__=="__main__":
     segmentedTestImg    = fcnInferImgSegment.segmentThisImage(testImage)
     plt.imshow(segmentedTestImg)
     plt.show()
+
+    inferSession.close()
