@@ -104,7 +104,7 @@ class FullyConvNet:
 
     def setOptimizer(self, *argv):
         try:
-            if self.nArgs == 7:
+            if self.nArgs == 8:
                 self.optAlgo          = argv[0]
                 self.initLearningRate = argv[1]
                 self.imageShape       = argv[2]
@@ -388,6 +388,7 @@ if __name__=="__main__":
     numOfEpochs         = 20
     saveModel           = 1
     perfThresh          = 0.8
+    topN                = 7
 
     print('Creating object for training')
     fcnImageSegmenter = FullyConvNet(trainSession, modelDir, trainDir, trainLabelDir, 
@@ -398,7 +399,12 @@ if __name__=="__main__":
     fcnImageSegmenter.setOptimizer(optAlgo, initLearningRate, ImgSize,maxGradNorm)
     fcnImageSegmenter.trainFCN(batchSize, keepProb, metric, numOfEpochs, saveModel, 
                                perfThresh)
+
+    print('Segmenting and saving test images')
     fcnImageSegmenter.generateAndSaveSegmentedTestImages(testResultDir)
+
+    print('Moving Top {} models to Infer Directory'.format(topN))
+    fcnImageSegmenter.moveToInferenceDir(topN)
 
     trainSession.close()
 
