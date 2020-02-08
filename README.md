@@ -14,7 +14,7 @@ Developed using Tensorflow.
 # Training Details
 
 # Usage Guide
-# ~~Future Work~~
+# Future Work
 * ~~Add GUI for both training and inference for user interaction.~~
-* ~~Develop a website to provide this as a web service.~~
-* ~~Extend/Modify this framework to support other semantic segmentation models.~~
+* Develop a website to provide this as a web service.
+* Extend/Modify this framework to support other semantic segmentation models.
