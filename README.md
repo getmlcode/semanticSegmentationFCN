@@ -6,7 +6,7 @@ Developed using Tensorflow.
 
 # Training Progress
 ### Epoch 5 --> 10 --> 15 on validation data
-|                   |
+|               |		        |
 | ------------- |:-------------:|
 ![](res/Figure_13.gif) | ![](res/Figure_17.gif)
 ![](res/Figure_9.gif) | ![](res/Figure_6.gif)
