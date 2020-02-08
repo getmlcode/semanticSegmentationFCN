@@ -1,11 +1,10 @@
 import tensorflow as tf
 import numpy as np
 import scipy
-import os
 import glob
+import os
 from preprocess import DataLoader
 import semSegMetric
-import matplotlib.pyplot as plt
 
 class FullyConvNet:
     def __init__(self, sess, *argv):
@@ -393,60 +392,13 @@ class FullyConvNet:
             return semSegMetric.IntersectionOverUnion(validationLabels, predictionLabels, self.numClasses)
 
 if __name__=="__main__":
-
-    trainSession = tf.Session()
-
-    # set directories
-    modelDir            = os.getcwd()+'\\model\\vgg'
-    trainDir            = 'C:\\DataSets\\data_road\\training\\image_2'
-    trainLabelDir       = 'C:\\DataSets\\data_road\\training\\gt_image_2'
-    validationDir       = 'C:\\DataSets\\data_road\\validation'
-    testDataDir         = 'C:\\DataSets\\data_road\\testing'
-    testResultDir       = 'C:\\DataSets\\data_road\\testing\\testResults'
-    fcnModelDir         = os.getcwd()+'\\model\\FCN'
-    fcnInferDir         = os.getcwd()+'\\model\\FCN\\Infer'
-    numOfClasses        = 2
-
-    # Set optimzer
-    optAlgo             = 'adam'
-    initLearningRate    = .001
-    ImgSize             = (160,576) # Size(any) to which resize train images
-    maxGradNorm         = .1
-
-    # Set training parameters
-    batchSize           = 32
-    keepProb            = .5
-    metric              = 'IOU'
-    numOfEpochs         = 20
-    saveModel           = 0
-    perfThresh          = 0.8
-    topN                = 7
-    showSegValImages    = 1 # 0 means Don't show segmented validaiton images after each epoch
-
-    print('Creating object for training')
-    fcnImageSegmenter = FullyConvNet(trainSession, modelDir, trainDir, trainLabelDir, 
-                                     validationDir, fcnModelDir, testDataDir, 
-                                     fcnInferDir, numOfClasses)
-    print('Object created successfully')
-
-    fcnImageSegmenter.setOptimizer(optAlgo, initLearningRate, ImgSize,maxGradNorm)
-
-    fcnImageSegmenter.trainFCN(batchSize, keepProb, metric, numOfEpochs, saveModel, 
-                               perfThresh, showSegValImages)
-
-    print('Segmenting and saving test images')
-    fcnImageSegmenter.generateAndSaveSegmentedTestImages(testResultDir)
-
-    print('Moving Top {} models to Infer Directory'.format(topN))
-    fcnImageSegmenter.moveToInferenceDir(topN)
-
-    trainSession.close()
-
     
     inferSession        = tf.Session()
 
     inferModelDir       =  os.getcwd()+'\\model\\FCN\\Infer'
     inferModelName      = 'FCN_IOU_0.7683481553708896_CrossEntropyLoss_6.4122965186834335'
+    ImgSize             = (160,576) # Size(any) to which resize train images
+    numOfClasses        = 2
 
     print('Creating object for inference')
     fcnInferImgSegment  = FullyConvNet(inferSession, inferModelDir, inferModelName, ImgSize, 
