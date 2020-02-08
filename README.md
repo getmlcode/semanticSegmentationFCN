@@ -10,6 +10,7 @@ Developed using Tensorflow.
 | ------------- |:-------------:|
 ![](res/Figure_13.gif) | ![](res/Figure_17.gif)
 ![](res/Figure_9.gif) | ![](res/Figure_6.gif)
+![](res/Figure_17.gif) |
 # Training Details
 
 # Usage Guide
