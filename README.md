@@ -11,6 +11,12 @@ I have used it to train **Fully Convolutional Network** and detect road in a giv
 ![](res/Figure_13.gif) | ![](res/Figure_17.gif)
 ![](res/Figure_9.gif) | ![](res/Figure_6.gif)
 ![](res/Figure_17.gif) |
+
+# Test Results
+#### `After training for 50 Epochs`
+|       Total 160 Images        |		        
+| ------------- |
+![](res/Epoch50_Test_Result.gif)|
 # Training Details
 
 # Usage Guide
