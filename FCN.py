@@ -1,4 +1,5 @@
 import tensorflow as tf
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 import glob
@@ -326,7 +327,7 @@ class FullyConvNet:
             for fileName in modelFileNames:
                 fileExtension = fileName.split('.')[-1]
                 # Move current file to inference directory
-                newFilePath = self.fcnInferDir + '//' + self.metric + '_' + perfMetricVal + '.' + fileExtension
+                newFilePath = self.fcnInferDir + '//FCN_' + self.metric + '_' + str(perfMetricVal) + '.' + fileExtension
                 os.replace(fileName, newFilePath)
 
     def getSegmentedImage(self, image, imageLogit):
@@ -372,19 +373,20 @@ class FullyConvNet:
 
         testImageBatch = self.imageLoader.load_test_batches_from_disk(self.batchSize)
 
-        name  = 'testImage_'
+        name  = 'epoch'+str(self.numOfEpochs)+'_TestImage_'
         count = 0
 
         for testImages in testImageBatch:
-            predictionLogits = self.sess.run(self.logits,feed_dict={self.image_input: testImages,
-                                                              self.keep_prob: 1.0})
-            imageLogits = predictionLogits.reshape(-1, self.imageShape[0], self.imageShape[1], self.numClasses)
+            predictionLogits = self.sess.run(self.logits, feed_dict={self.image_input: testImages, 
+                                                                     self.keep_prob: 1.0})
+            imageLogits = predictionLogits.reshape(-1, self.imageShape[0], self.imageShape[1], 
+                                                   self.numClasses)
 
             del predictionLogits
             for image, imageLogit in zip(testImages, imageLogits):
                 count = count+1
                 segmentedImage = self.getSegmentedImage(image, imageLogit)
-                scipy.misc.imsave(os.path.join(testResultDir, name+str(count)), segmentedImage)
+                scipy.misc.imsave(os.path.join(testResultDir, name+str(count)+'.png'), segmentedImage)
 
     def getPerformanceMetric(self, validationLabels, predictionLabels, metric):
     
@@ -396,7 +398,7 @@ if __name__=="__main__":
     inferSession        = tf.Session()
 
     inferModelDir       =  os.getcwd()+'\\model\\FCN\\Infer'
-    inferModelName      = 'FCN_IOU_0.7683481553708896_CrossEntropyLoss_6.4122965186834335'
+    inferModelName      = 'IOU_0.8870986477691906'
     ImgSize             = (160,576) # Size(any) to which resize train images
     numOfClasses        = 2
 

@@ -9,7 +9,7 @@ if __name__=="__main__":
     inferSession        = tf.Session()
 
     inferModelDir       =  os.getcwd()+'\\model\\FCN\\Infer'
-    inferModelName      = 'FCN_IOU_0.8870986477691906_CrossEntropyLoss_0.7758160904049873'
+    inferModelName      = 'IOU_0.8870986477691906'
     ImgSize             = (160,576) # Size(any) to which resize train images
     numOfClasses        = 2
 

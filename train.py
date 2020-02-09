@@ -11,7 +11,7 @@ if __name__ == "__main__":
     trainDir            = 'C:\\DataSets\\data_road\\training\\image_2'
     trainLabelDir       = 'C:\\DataSets\\data_road\\training\\gt_image_2'
     validationDir       = 'C:\\DataSets\\data_road\\validation'
-    testDataDir         = 'C:\\DataSets\\data_road\\testing'
+    testDataDir         = 'C:\\DataSets\\data_road\\testing\\image_2'
     testResultDir       = 'C:\\DataSets\\data_road\\testing\\testResults'
     fcnModelDir         = os.getcwd()+'\\model\\FCN'
     fcnInferDir         = os.getcwd()+'\\model\\FCN\\Infer'
@@ -27,11 +27,11 @@ if __name__ == "__main__":
     batchSize           = 32
     keepProb            = .5
     metric              = 'IOU'
-    numOfEpochs         = 1
+    numOfEpochs         = 50
     saveModel           = 0
     perfThresh          = 0.8
     topN                = 7
-    showSegValImages    = 1 # 0 means Don't show segmented validaiton images after each epoch
+    showSegValImages    = 0 # 0 means Don't show segmented validaiton images after each epoch
     
     print('Creating object for training')
 
