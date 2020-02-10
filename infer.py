@@ -1,4 +1,4 @@
-from FCN import FullyConvNet
+from ImageSemanticSegmentor.FCN.FCN import FullyConvNet
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import scipy

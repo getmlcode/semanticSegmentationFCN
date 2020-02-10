@@ -1,4 +1,4 @@
-from FCN import FullyConvNet
+from ImageSemanticSegmentor.FCN.FCN import FullyConvNet
 import tensorflow as tf
 import os
 
@@ -8,8 +8,8 @@ if __name__ == "__main__":
     
     # set directories
     vggModelDir         = os.getcwd()+'\\model\\vgg'
-    trainDir            = 'C:\\DataSets\\data_road\\training\\image_2'
-    trainLabelDir       = 'C:\\DataSets\\data_road\\training\\gt_image_2'
+    trainDir            = 'C:\\DataSets\\data_road\\debug\\image_2'
+    trainLabelDir       = 'C:\\DataSets\\data_road\\debug\\gt_image_2'
     validationDir       = 'C:\\DataSets\\data_road\\validation'
     testDataDir         = 'C:\\DataSets\\data_road\\testing\\image_2'
     testResultDir       = 'C:\\DataSets\\data_road\\testing\\testResults'
@@ -27,7 +27,7 @@ if __name__ == "__main__":
     batchSize           = 32
     keepProb            = .5
     metric              = 'IOU'
-    numOfEpochs         = 50
+    numOfEpochs         = 1
     saveModel           = 0
     perfThresh          = 0.8
     topN                = 7
