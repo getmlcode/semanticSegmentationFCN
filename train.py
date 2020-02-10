@@ -7,7 +7,7 @@ if __name__ == "__main__":
     trainSession = tf.Session()
     
     # set directories
-    modelDir            = os.getcwd()+'\\model\\vgg'
+    vggModelDir         = os.getcwd()+'\\model\\vgg'
     trainDir            = 'C:\\DataSets\\data_road\\training\\image_2'
     trainLabelDir       = 'C:\\DataSets\\data_road\\training\\gt_image_2'
     validationDir       = 'C:\\DataSets\\data_road\\validation'
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     
     print('Creating object for training')
 
-    imageSegmenter = FullyConvNet(trainSession, modelDir, trainDir, trainLabelDir, 
+    imageSegmenter = FullyConvNet(trainSession, vggModelDir, trainDir, trainLabelDir, 
                                   validationDir, fcnModelDir, testDataDir, 
                                   fcnInferDir, numOfClasses)
 
