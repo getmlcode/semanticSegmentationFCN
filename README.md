@@ -32,6 +32,9 @@ I have used it to train **Fully Convolutional Network** and detect road in a giv
 
 # Test Results
 #### `After training for 50 Epochs`
+
+#### *`IOU : 0.92`*
+
 |       Total 160 Images        |		        
 | ------------- |
 ![](res/Epoch50_Test_Result.gif)|
