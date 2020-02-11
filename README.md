@@ -73,8 +73,8 @@ imageSegmenter = FullyConvNet(trainSession, vggModelDir, trainDataDir, trainLabe
 
 *Then Set Optimization Parameters*
 
-| Parameter    | Purpose         | Note 
-| ------------- | :-------------:||
+| Parameter    | Purpose         | Note |
+| ------------- | :-------------:|:---:|
 **`optAlgo`**    | **`Optimization Algoritm`** | **`Only 3 are suppored`**
 **`initLearningRate`**    | **`Step Size`**
 **`ImgSize`**    | **`Image Dimension To Resize Train Images`**
