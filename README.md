@@ -17,9 +17,29 @@ I have used it to train **Fully Convolutional Network** and detect road in a giv
 |       Total 160 Images        |		        
 | ------------- |
 ![](res/Epoch50_Test_Result.gif)|
+
 # Training Details
+---
+| Parameter    | Value         |
+| ------------- | :-------------:|
+**`Optimization Algorithm`**    | **`Adam`**
+**`Learning Step Schedule`**    | **`Exponential Decay`**
+**`Regularization`**             | **`Dropout = 0.5`**
+**`Exploding Gradient Remedy`** | **`Clipping Gradient (Max Norm = 0.1)`**
+**`Performance Metric`**         | **`Intersection Over Union (IOU)`**
+**`Numper Of Epochs`**           | **`50`**
+**`Batch Size`**                 | **`32`**
 
 # Usage Guide
+
+#### `Training`
+
+---
+
+#### `Inference`
+
+---
+
 # Future Work
 * [ ] Add GUI for both training and inference for user interaction.~~
 * [ ] Develop a website to provide this as a web service.
