@@ -42,15 +42,82 @@ I have used it to train **Fully Convolutional Network** and detect road in a giv
 
 ---
 
-Add Here
+*Import*
+
+```python
+from ImageSemanticSegmentor.FCN.FCN import FullyConvNet
+```
+
+*Then set following directories*
+
+| Directory    | Content         |
+| ------------- | :-------------:|
+**`vggModelDir`**    | **`Pretrained VGG weights`**
+**`trainDataDir`**    | **`Training Images`**
+**`trainLabelDir`**    | **`Training Image Labels`**
+**`validationDir`**    | **`Validation Images`**
+**`fcnModelDir`**    | **`Saved Model Weights`**
+**`fcnInferDir`**    | **`Model Weights For Inference`**
+**`testDataDir`**    | **`Test Images`**
+**`testResultDir`**    | **`Inference Results Of Test Images`**
+
+*Create Object For Training*
+
+```python
+imageSegmenter = FullyConvNet(trainSession, vggModelDir, trainDataDir, trainLabelDir, 
+                              validationDir, fcnModelDir, testDataDir, 
+                              fcnInferDir, numOfClasses)
+```
+
+<br>
+
+*Then Set Optimization Parameters*
+
+| Parameter    | Purpose         | Note |
+| ------------- | :-------------:||
+**`optAlgo`**    | **`Optimization Algoritm`** | **`Only 3 are suppored`**
+**`initLearningRate`**    | **`Step Size`**
+**`ImgSize`**    | **`Image Dimension To Resize Train Images`**
+**`maxGradNorm`**    | **`Maximum Gradient Norm For Clipping Gradient`** | **`Needed To Prevent Exploding Gradient`**
+
+*Set optimizer*
+
+```python
+imageSegmenter.setOptimizer(optAlgo, initLearningRate, ImgSize, maxGradNorm)
+```
+
+<br>
+
+*Then set training parameters*
+
+| Parameter    | Purpose         |
+| ------------- | :-------------:|
+**`batchSize`**    | **`Number Of Images In Training Batch`**
+**`keepProb`**    | **`Dropout Probability`**
+**`metric`**    | **`Performance Metric To Use`**
+**`numOfEpochs`**    | **`Number Of Times To Iterate Through Whole Train Data`**
+**`saveModel`**    | **`Save Learnt Models ? `**
+**`perfThresh`**    | **`Minimum Acceptable Model Performance`**
+**`showSegValImages`**    | **`Display Segmented Images During Model Validation`**
+
+*Start training*
+```python
+imageSegmenter.trainFCN(batchSize, keepProb, metric, numOfEpochs, saveModel,
+                        perfThresh, showSegValImages)
+```
+<br>
+
+
+#### *`Then Sit Back And Wait`*
 
 ---
+
+<br>
 
 #### `Inference`
-
 ---
 
-Add Here
+
 
 ---
 
