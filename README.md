@@ -69,7 +69,6 @@ imageSegmenter = FullyConvNet(trainSession, vggModelDir, trainDataDir, trainLabe
                               fcnInferDir, numOfClasses)
 ```
 
-<br>
 
 *Then Set Optimization Parameters*
 
@@ -85,8 +84,6 @@ imageSegmenter = FullyConvNet(trainSession, vggModelDir, trainDataDir, trainLabe
 ```python
 imageSegmenter.setOptimizer(optAlgo, initLearningRate, ImgSize, maxGradNorm)
 ```
-
-<br>
 
 *Then set training parameters*
 
@@ -105,14 +102,10 @@ imageSegmenter.setOptimizer(optAlgo, initLearningRate, ImgSize, maxGradNorm)
 imageSegmenter.trainFCN(batchSize, keepProb, metric, numOfEpochs, saveModel,
                         perfThresh, showSegValImages)
 ```
-<br>
-
 
 #### *`Then Sit Back And Wait`*
 
 ---
-
-<br>
 
 #### `Inference`
 ---
