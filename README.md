@@ -113,8 +113,10 @@ imageSegmenter.trainFCN(batchSize, keepProb, metric, numOfEpochs, saveModel,
 
 
 ---
-
 # Future Work
 * [ ] Add GUI for both training and inference for user interaction.~~
 * [ ] Develop a website to provide this as a web service.
 * [ ] Extend/Modify this framework to support other semantic segmentation models.
+
+# References
+To Be Added
