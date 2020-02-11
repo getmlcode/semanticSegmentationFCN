@@ -42,13 +42,13 @@ I have used it to train **Fully Convolutional Network** and detect road in a giv
 
 ---
 
-*Import*
+**_Import_**
 
 ```python
 from ImageSemanticSegmentor.FCN.FCN import FullyConvNet
 ```
 
-*Then set following directories*
+**_Then set following directories_**
 
 | Directory    | Content         |
 | ------------- | :-------------:|
@@ -61,7 +61,7 @@ from ImageSemanticSegmentor.FCN.FCN import FullyConvNet
 **`testDataDir`**    | **`Test Images`**
 **`testResultDir`**    | **`Inference Results Of Test Images`**
 
-*Create Object For Training*
+**_Create Object For Training_**
 
 ```python
 imageSegmenter = FullyConvNet(trainSession, vggModelDir, trainDataDir, trainLabelDir, 
@@ -70,7 +70,7 @@ imageSegmenter = FullyConvNet(trainSession, vggModelDir, trainDataDir, trainLabe
 ```
 
 
-*Then Set Optimization Parameters*
+**_Then Set Optimization Parameters_**
 
 | Parameter    | Purpose         | Note |
 | ------------- | :-------------:|:---:|
@@ -79,13 +79,13 @@ imageSegmenter = FullyConvNet(trainSession, vggModelDir, trainDataDir, trainLabe
 **`ImgSize`**    | **`Image Dimension To Resize Train Images`**
 **`maxGradNorm`**    | **`Maximum Gradient Norm For Clipping Gradient`** | **`Needed To Prevent Exploding Gradient`**
 
-*Set optimizer*
+**_Set optimizer_**
 
 ```python
 imageSegmenter.setOptimizer(optAlgo, initLearningRate, ImgSize, maxGradNorm)
 ```
 
-*Then set training parameters*
+**_Then set training parameters_**
 
 | Parameter    | Purpose         |
 | ------------- | :-------------:|
@@ -97,7 +97,7 @@ imageSegmenter.setOptimizer(optAlgo, initLearningRate, ImgSize, maxGradNorm)
 **`perfThresh`**    | **`Minimum Acceptable Model Performance`**
 **`showSegValImages`**    | **`Display Segmented Images During Model Validation`**
 
-*Start training*
+**_Start training_**
 ```python
 imageSegmenter.trainFCN(batchSize, keepProb, metric, numOfEpochs, saveModel,
                         perfThresh, showSegValImages)
