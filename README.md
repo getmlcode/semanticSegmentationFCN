@@ -40,6 +40,7 @@ I have used it to train **Fully Convolutional Network** and detect road in a giv
 ![](res/Epoch50_Test_Result.gif)|
 
 # Usage Guide
+*_It uses same class' object for training and inference depending on number of arguments used to create the object._*
 
 ### `Training`
 
