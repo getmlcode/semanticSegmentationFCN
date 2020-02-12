@@ -150,7 +150,7 @@ segmentedTestImg    = inferImgSegment.segmentThisImage(testImage)
 
 ---
 # Future Work
-* [ ] Add GUI for both training and inference for user interaction.~~
+* [ ] Add GUI for both training and inference for user interaction.
 * [ ] Develop a website to provide this as a web service.
 * [ ] Extend/Modify this framework to support other semantic segmentation models.
 
