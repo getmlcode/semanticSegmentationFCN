@@ -48,6 +48,10 @@ Extract dataset in the data folder. This will create the folder data_road with a
 # Usage Guide
 *_It uses same class' object for training and inference depending on number of arguments used to create the object._*
 
+Refer [train](train.py) file for training code.  
+Refer [infer](infer.py) file for inference code.  
+Detailed Explanation for using [FCN](ImageSemanticSegmentor/FCN/FCN.py) class is in next section
+
 ### `Training`
 
 ---
