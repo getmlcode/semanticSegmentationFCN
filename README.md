@@ -41,7 +41,7 @@ I have used it to train **Fully Convolutional Network** and detect road in a giv
 
 # Usage Guide
 
-#### `Training`
+### `Training`
 
 ---
 
@@ -110,7 +110,7 @@ imageSegmenter.trainFCN(batchSize, keepProb, metric, numOfEpochs, saveModel,
 
 ---
 
-#### `Inference`
+### `Inference`
 ---
 
 **_Set following parameters_**
