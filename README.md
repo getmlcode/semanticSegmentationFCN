@@ -28,6 +28,12 @@ I have used it to train **Fully Convolutional Network** and detect road in a giv
 ![](res/Figure_9.gif) | ![](res/Figure_6.gif)
 ![](res/Figure_17.gif) |
 
+#### *`Dataset`*
+
+Download the [Kitti Road dataset](http://www.cvlibs.net/datasets/kitti/eval_road.php) from [here](http://www.cvlibs.net/download.php?file=data_road.zip).  
+Extract dataset in the data folder. This will create the folder data_road with all the training and test images.
+
+
 ---
 
 # Test Results
@@ -145,4 +151,5 @@ segmentedTestImg    = inferImgSegment.segmentThisImage(testImage)
 * [ ] Extend/Modify this framework to support other semantic segmentation models.
 
 # References
-To Be Added
+Code to generate training batches is taken from [here](https://github.com/udacity/CarND-Semantic-Segmentation/blob/master/helper.py)  
+Read aboout **Fully Convolutional Network** from [here](https://arxiv.org/pdf/1605.06211.pdf)
