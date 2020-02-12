@@ -113,7 +113,29 @@ imageSegmenter.trainFCN(batchSize, keepProb, metric, numOfEpochs, saveModel,
 #### `Inference`
 ---
 
+**_Set following parameters_**
 
+| Parameter    | Purpose         |
+| ------------- | :-------------:|
+**`inferModelDir`**    | **`Directory Containing Trained Model Files`**
+**`inferModelName`**    | **`Model File Name`**
+**`ImgSize`**    | **`Image Dimension`**
+**`numOfEpochs`**    | **`Number Of Times To Iterate Through Whole Train Data`**
+
+**_Create object for inference_**
+
+```python
+inferSession        = tf.Session()
+inferImgSegment     = FullyConvNet(inferSession, inferModelDir, inferModelName, ImgSize,
+                                   numOfClasses)
+```
+
+**_Obtain segmented image_**
+
+```python
+testImage           = scipy.misc.imresize(scipy.misc.imread(image_file), ImgSize)
+segmentedTestImg    = inferImgSegment.segmentThisImage(testImage)
+```
 
 ---
 # Future Work
