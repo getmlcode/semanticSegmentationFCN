@@ -52,6 +52,10 @@ Refer [train](train.py) file for training code.
 Refer [infer](infer.py) file for inference code.  
 Detailed Explanation for using [FCN](ImageSemanticSegmentor/FCN/FCN.py) class is in next section
 
+### `GUI`
+#### `(Incomplete, currently being developed)`
+![](deepSemSeg_GUI.gif)
+
 ### `Training`
 
 ---
