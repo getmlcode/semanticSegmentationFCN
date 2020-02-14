@@ -1,8 +1,8 @@
-# Semantic Segmentation
-This repository has framework for training, validation and inference of semantic segmentation models, but currenty it only supports FCN.
+# Deep Semantic Segmentation
+This is a framework for training, validation and inference of deep semantic segmentation models, but currenty it only supports FCN.
 I have used it to train **Fully Convolutional Network** and detect road in a given scene using learnt model.  
 
-`Developed using Tensorflow Framework.`
+`Developed using Tensorflow`
 
 # Training Progress
 
