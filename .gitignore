@@ -1,5 +1,6 @@
 *.bat
 .gitignore
+*.pyproj
 __pycache__/
 *.sln
 *.pyproj
