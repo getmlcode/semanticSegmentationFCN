@@ -12,7 +12,7 @@ class deepSemSeg_GUI:
         deepSemSeg_GUI_root.title("Deep Semantic Segmentation")
         deepSemSeg_GUI_root.minsize(500, 460)
         # deepSemSeg_GUI_root.maxsize(500, 460)
-        deepSemSeg_GUI_root.geometry("500x460+500+150")
+        deepSemSeg_GUI_root.geometry("550x540+500+150")
 
         # Read and resize open folder image
         folderImg = PhotoImage(file=os.getcwd() + "\\gui_imgs\\open.png").subsample(
@@ -173,16 +173,133 @@ class deepSemSeg_GUI:
             font='Helvetica 9 bold',
             fg='blue'
             )
-        learnRateLabel.grid(row=9, column=0)
+        learnRateLabel.grid(row=9, column=0,sticky=E)
 
         self.initLearnRate = Entry(trainParamFrame, bd=4, width=5)
         self.initLearnRate.insert(0, "0.001")
         self.initLearnRate.grid(
-            row=9, column=1, pady=2, padx=2, sticky=NSEW, ipadx=3, ipady=3
+            row=9, column=1, padx=2, sticky=W, ipadx=3, ipady=3
             )
 
+        optAlgoList = ['Adam', 'Gradient Descent', 'Momentum']
+        optAlgo = StringVar(trainParamFrame)
+        optAlgo.set(optAlgoList[0])
+        optAlgoOption = OptionMenu(
+            trainParamFrame,
+            optAlgo,
+            *optAlgoList
+            )
+        optAlgoOption.config(width=12, font=('Helvetica', 9))
+        optAlgoOption.grid(
+            row=9, column=2, padx=2, sticky=NSEW, ipadx=3, ipady=3
+            )
 
+        maxNormLabel = Label(
+            trainParamFrame,
+            text='Max Norm',
+            font='Helvetica 9 bold',
+            fg='blue'
+            )
+        maxNormLabel.grid(row=10, column=0, sticky=E)
+
+        self.maxNorm = Entry(trainParamFrame, bd=4, width=5)
+        self.maxNorm.insert(0, "0.1")
+        self.maxNorm.grid(
+            row=10, column=1, padx=2, sticky=W, ipadx=3, ipady=3
+            )
+
+        perfMetricList = ['IOU', 'F1-Measure']
+        perfMetric = StringVar(trainParamFrame)
+        perfMetric.set(perfMetricList[0])
+        perfMetricOption = OptionMenu(
+            trainParamFrame,
+            perfMetric,
+            *perfMetricList
+            )
+        perfMetricOption.config(width=12, font=('Helvetica', 9))
+        perfMetricOption.grid(
+            row=10, column=2, padx=2, sticky=NSEW, ipadx=3, ipady=3
+            )
+
+        numOfEpochsLabel = Label(
+            trainParamFrame,
+            text='# Epochs',
+            font='Helvetica 9 bold',
+            fg='blue'
+            )
+        numOfEpochsLabel.grid(row=11, column=0, sticky=E)
+
+        self.numOfEpochs = Entry(trainParamFrame, bd=4, width=5)
+        self.numOfEpochs.insert(0, "5")
+        self.numOfEpochs.grid(
+            row=11, column=1, padx=2, sticky=W, ipadx=3, ipady=3
+            )
+
+        batchSizeList = ['32', '64', '128']
+        batchSize = StringVar(trainParamFrame)
+        batchSize.set(batchSizeList[0])
+        batchSizeOption = OptionMenu(
+            trainParamFrame,
+            batchSize,
+            *batchSizeList
+            )
+        batchSizeOption.config(width=12, font=('Helvetica', 9))
+        batchSizeOption.grid(
+            row=11, column=2, padx=2, sticky=NSEW, ipadx=3, ipady=3
+            )
+
+        saveModelStatus = IntVar(trainParamFrame)
+        saveModelChk = Checkbutton(
+            trainParamFrame,
+            variable=saveModelStatus,
+            text='Save Model',
+            fg='blue',
+            font='Helvetica 9 bold',
+            width=10,
+            command=lambda : self.updateThresholdEntryStatus(saveModelStatus))
+        saveModelChk.grid(
+            row=12, column=2, sticky=W, ipadx=3, ipady=3
+            )
+
+        perfThreshLabel = Label(
+            trainParamFrame,
+            text='Threshold',
+            font='Helvetica 9 bold',
+            fg='blue'
+            )
+        perfThreshLabel.grid(row=12, column=0, sticky=E)
+
+        self.perfThresh = Entry(trainParamFrame, bd=4, width=5)
+        self.perfThresh.insert(0, "0.8")
+        self.perfThresh.config(state='disabled')
+        self.perfThresh.grid(
+            row=12, column=1, padx=1, sticky=W, ipadx=3, ipady=2
+            )
+
+        showSegValImgsStatus = IntVar(trainParamFrame)
+        showSegValImgs = Checkbutton(
+            trainParamFrame,
+            variable=showSegValImgsStatus,
+            text='Show Images',
+            fg='blue',
+            font='Helvetica 9 bold',
+            width=12
+            )
+        showSegValImgs.grid(
+            row=13, column=2, sticky=W, ipadx=3, ipady=3
+            )
+
+        startTrainingButton = Button(
+            trainParamFrame,
+            image=folderImg,
+            text="Start Training", 
+            compound=LEFT,
+        )
+        startTrainingButton.image = folderImg
+        startTrainingButton.grid(row=14, column=0, columnspan=3, pady=1, padx=10, sticky=NSEW)
+        
         trainParamFrame.grid_rowconfigure(8, minsize=12)
+
 
         # Status messages frame design
         statusMsgFrame = Frame(
@@ -197,10 +314,10 @@ class deepSemSeg_GUI:
         statusMsgBox = Text(statusMsgFrame, bg="white", relief=SUNKEN)
         statusMsgBox.pack(side=TOP, fill=BOTH, expand=1)
 
-        clearMsgButton = Button(statusMsgFrame, bg="cyan", text="Clear Messages")
+        clearMsgButton = Button(statusMsgFrame, bg="cyan", text="Clear")
         clearMsgButton.pack(side=LEFT, fill=X, expand=1, padx=4, pady=4)
 
-        saveMsgButton = Button(statusMsgFrame, bg="cyan", text="Save Messages")
+        saveMsgButton = Button(statusMsgFrame, bg="cyan", text="Save")
         saveMsgButton.pack(side=LEFT, fill=X, expand=1, padx=4, pady=4)
 
         # Inference Tab Design
@@ -209,6 +326,13 @@ class deepSemSeg_GUI:
 
         tabControl.pack(expand=1, fill="both")
         return
+    
+    def updateThresholdEntryStatus(self, saveModelStatus):
+
+        if(saveModelStatus.get()):
+            self.perfThresh.config(state=NORMAL)
+        else:
+            self.perfThresh.config(state=DISABLED)
 
     def setThisDirectory(self, Id):
         currentDirectory = filedialog.askdirectory()
@@ -227,8 +351,8 @@ class deepSemSeg_GUI:
                 self.trainLabelPath.insert(0, currentDirectory)
 
             elif Id == 3:
-                self.trainDataPath.delete(0, END)
-                self.trainDataPath.insert(0, currentDirectory)
+                self.validationDataPath.delete(0, END)
+                self.validationDataPath.insert(0, currentDirectory)
 
             elif Id == 4:
                 self.testDataPath.delete(0, END)

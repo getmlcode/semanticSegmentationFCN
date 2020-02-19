@@ -16,11 +16,12 @@ if __name__ == "__main__":
     fcnModelDir         = os.getcwd()+'\\model\\FCN'
     fcnInferDir         = os.getcwd()+'\\model\\FCN\\Infer'
     numOfClasses        = 2
+
+    ImgSize             = (160,576) # Size(any) to which resize train images
     
     # Set optimzer
     optAlgo             = 'adam'
     initLearningRate    = .001
-    ImgSize             = (160,576) # Size(any) to which resize train images
     maxGradNorm         = .1
     
     # Set training parameters
