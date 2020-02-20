@@ -12,7 +12,7 @@ class deepSemSeg_GUI:
         deepSemSeg_GUI_root.title("Deep Semantic Segmentation")
         deepSemSeg_GUI_root.minsize(500, 460)
         # deepSemSeg_GUI_root.maxsize(500, 460)
-        deepSemSeg_GUI_root.geometry("550x540+500+150")
+        deepSemSeg_GUI_root.geometry("750x540+500+150")
 
         # Read and resize open folder image
         folderImg = PhotoImage(file=os.getcwd() + "\\gui_imgs\\open.png").subsample(
@@ -30,150 +30,114 @@ class deepSemSeg_GUI:
 
         trainParamFrame = Frame(
             trainTab,
-            highlightbackground="blue",
-            width=50,
-            height=50,
+            #highlightbackground="blue",
             highlightthickness=2,
         )
-        trainParamFrame.pack(side=LEFT, fill=BOTH, expand=1, padx=2, pady=4)
+        trainParamFrame.pack(side=LEFT, fill=Y, expand=1)
+        # Set minisize for row-8
+        trainParamFrame.grid_rowconfigure(8, minsize=12)
 
+        # Create GUI elements
+        self.renderDirectoryInputGUI(trainParamFrame, folderImg)
+        self.renderTrainParamInputGUI(trainParamFrame)
+        self.renderValidateAndSaveModelInputGUI(trainParamFrame)
 
-        vggModelDirButton = Button(
+        startTrainingButton = Button(
             trainParamFrame,
-            image=folderImg,
-            text="VGG          ",
+            text="Start Training",
+            bg='blue',
+            fg='yellow',
+            font='Helvetica 13 bold',
             compound=LEFT,
-            command=lambda : self.setThisDirectory(0),
         )
-        vggModelDirButton.image = folderImg
-        vggModelDirButton.grid(row=0, pady=2, padx=2, sticky=NSEW)
+        startTrainingButton.image = folderImg
+        startTrainingButton.grid(row=14, column=0, columnspan=3, pady=1, padx=10, sticky=NSEW)
+        startTrainingButton.config(command=lambda : self.startTraining(statusMsgBox))
 
-        self.vggModelPath = Entry(trainParamFrame, bd=4, width=30)
-        self.vggModelPath.insert(0, "Vgg Model Directory")
-        self.vggModelPath.grid(
-            row=0, column=1, columnspan=8, pady=2, padx=2, sticky=NSEW, ipadx=3, ipady=3
+
+        # Status messages frame design
+        statusMsgFrame = Frame(
+            trainTab,
+            #highlightbackground="red",
+            highlightthickness=2
         )
+        statusMsgFrame.pack(side=LEFT, fill=BOTH, expand=1)
 
+        statusMsgBox = Text(statusMsgFrame, bg="white", relief=SUNKEN)
+        statusMsgBox.pack(side=TOP, fill=BOTH, expand=1)
+        scrollbar = Scrollbar(
+            statusMsgBox,
+            cursor='hand2'
+            )
+        scrollbar.pack( side = RIGHT, fill = Y )
+        statusMsgBox.config(yscrollcommand=scrollbar.set)
+        scrollbar.config(command=statusMsgBox.yview)
 
-        trainDataDirButton = Button(
+        clearMsgButton = Button(statusMsgFrame, bg="cyan", text="Clear")
+        clearMsgButton.pack(side=LEFT, fill=X, expand=1, padx=4, pady=4)
+
+        saveMsgButton = Button(statusMsgFrame, bg="cyan", text="Save")
+        saveMsgButton.pack(side=LEFT, fill=X, expand=1, padx=4, pady=4)
+
+        # Inference Tab Design
+        inferTab = ttk.Frame(tabControl)
+        tabControl.add(inferTab, text="     Infer     ")
+
+        tabControl.pack(expand=1, fill="both")
+    
+    def renderValidateAndSaveModelInputGUI(self,trainParamFrame):
+        saveModelStatus = IntVar(trainParamFrame)
+        saveModelChk = Checkbutton(
             trainParamFrame,
-            image=folderImg,
-            text="Train         ",
-            compound=LEFT,
-            command=lambda : self.setThisDirectory(1),
-        )
-        trainDataDirButton.image = folderImg
-        trainDataDirButton.grid(row=1, pady=1, padx=2, sticky=NSEW)
+            variable=saveModelStatus,
+            text='Save Model',
+            fg='blue',
+            font='Helvetica 9 bold',
+            width=10,
+            command=lambda : self.updateThresholdEntryStatus(saveModelStatus)
+            )
+        saveModelChk.grid(
+            row=12, column=2, sticky=W, ipadx=3, ipady=3
+            )
 
-        self.trainDataPath = Entry(trainParamFrame, bd=4, width=30)
-        self.trainDataPath.insert(0, "Train Data Directory")
-        self.trainDataPath.grid(
-            row=1, column=1, columnspan=8, pady=2, padx=2, sticky=NSEW, ipadx=3, ipady=3
-        )
-
-        trainLabelDirButton = Button(
+        perfThreshLabel = Label(
             trainParamFrame,
-            image=folderImg,
-            text="Label         ", 
-            compound=LEFT,
-            command=lambda : self.setThisDirectory(2),
-        )
-        trainLabelDirButton.image = folderImg
-        trainLabelDirButton.grid(row=2, pady=1, padx=2, sticky=NSEW)
+            text='Threshold',
+            font='Helvetica 9 bold',
+            fg='blue'
+            )
+        perfThreshLabel.grid(row=12, column=0, sticky=E)
 
-        self.trainLabelPath = Entry(trainParamFrame, bd=4, width=30)
-        self.trainLabelPath.insert(0, "Train Label Directory")
-        self.trainLabelPath.grid(
-            row=2, column=1, columnspan=8, pady=2, padx=2, sticky=NSEW, ipadx=3, ipady=3
-        )
+        self.perfThresh = Entry(trainParamFrame, bd=4, width=5)
+        self.perfThresh.insert(0, "0.8")
+        self.perfThresh.config(state='disabled')
+        self.perfThresh.grid(
+            row=12, column=1, padx=1, sticky=W, ipadx=3, ipady=2
+            )
 
-        validationDataDirButton = Button(
+        showSegValImgsStatus = IntVar(trainParamFrame)
+        showSegValImgs = Checkbutton(
             trainParamFrame,
-            image=folderImg,
-            text="Validation",
-            compound=LEFT,
-            command=lambda : self.setThisDirectory(3),
-        )
-        validationDataDirButton.image = folderImg
-        validationDataDirButton.grid(row=3, pady=1, padx=2, sticky=NSEW)
+            variable=showSegValImgsStatus,
+            text='Show Images',
+            fg='blue',
+            font='Helvetica 9 bold',
+            width=12
+            )
+        showSegValImgs.grid(
+            row=13, column=2, sticky=W, ipadx=3, ipady=3
+            )
 
-        self.validationDataPath = Entry(trainParamFrame, bd=4, width=30)
-        self.validationDataPath.insert(0, "Validation Data Directory")
-        self.validationDataPath.grid(
-            row=3, column=1, columnspan=8, pady=2, padx=2, sticky=NSEW, ipadx=3, ipady=3
-        )
+    # ---- Rendering Functions ----
 
-        testDataDirButton = Button(
-            trainParamFrame,
-            image=folderImg,
-            text="Test          ",
-            compound=LEFT,
-            command=lambda : self.setThisDirectory(4),
-        )
-        testDataDirButton.image = folderImg
-        testDataDirButton.grid(row=4, pady=1, padx=2, sticky=NSEW)
-
-        self.testDataPath = Entry(trainParamFrame, bd=4, width=30)
-        self.testDataPath.insert(0, "Test Data Directory")
-        self.testDataPath.grid(
-            row=4, column=1, columnspan=8, pady=2, padx=2, sticky=NSEW, ipadx=3, ipady=3
-        )
-
-        testResDirButton = Button(
-            trainParamFrame,
-            image=folderImg,
-            text="Result       ",
-            compound=LEFT,
-            command=lambda : self.setThisDirectory(5),
-        )
-        testResDirButton.image = folderImg
-        testResDirButton.grid(row=5, pady=1, padx=2, sticky=NSEW)
-
-        self.testResPath = Entry(trainParamFrame, bd=4, width=30)
-        self.testResPath.insert(0, "Test Result Directory")
-        self.testResPath.grid(
-            row=5, column=1, columnspan=8, pady=2, padx=2, sticky=NSEW, ipadx=3, ipady=3
-        )
-
-        learntModelDirButton = Button(
-            trainParamFrame,
-            image=folderImg,
-            text="FCN         ",
-            compound=LEFT,
-            command=lambda : self.setThisDirectory(6),
-        )
-        learntModelDirButton.image = folderImg
-        learntModelDirButton.grid(row=6, pady=1, padx=2, sticky=NSEW)
-
-        self.learntModelPath = Entry(trainParamFrame, bd=4, width=30)
-        self.learntModelPath.insert(0, "Learnt Model Directory")
-        self.learntModelPath.grid(
-            row=6, column=1, columnspan=8, pady=2, padx=2, sticky=NSEW, ipadx=3, ipady=3
-        )
-
-        inferModelDirButton = Button(
-            trainParamFrame,
-            image=folderImg,
-            text="Infer         ",
-            compound=LEFT,
-            command=lambda : self.setThisDirectory(7),
-        )
-        inferModelDirButton.image = folderImg
-        inferModelDirButton.grid(row=7, pady=1, padx=2, sticky=NSEW)
-
-        self.inferModelPath = Entry(trainParamFrame, bd=4, width=30)
-        self.inferModelPath.insert(0, "Inference Model Directory")
-        self.inferModelPath.grid(
-            row=7, column=1, columnspan=8, pady=2, padx=2, sticky=NSEW, ipadx=3, ipady=3
-        )
-
+    def renderTrainParamInputGUI(self,trainParamFrame):
         learnRateLabel = Label(
             trainParamFrame,
             text='Learning Rate',
             font='Helvetica 9 bold',
             fg='blue'
             )
-        learnRateLabel.grid(row=9, column=0,sticky=E)
+        learnRateLabel.grid(row=9, column=0, sticky=E)
 
         self.initLearnRate = Entry(trainParamFrame, bd=4, width=5)
         self.initLearnRate.insert(0, "0.001")
@@ -248,85 +212,147 @@ class deepSemSeg_GUI:
             row=11, column=2, padx=2, sticky=NSEW, ipadx=3, ipady=3
             )
 
-        saveModelStatus = IntVar(trainParamFrame)
-        saveModelChk = Checkbutton(
-            trainParamFrame,
-            variable=saveModelStatus,
-            text='Save Model',
-            fg='blue',
-            font='Helvetica 9 bold',
-            width=10,
-            command=lambda : self.updateThresholdEntryStatus(saveModelStatus))
-        saveModelChk.grid(
-            row=12, column=2, sticky=W, ipadx=3, ipady=3
-            )
+    def renderDirectoryInputGUI(self, trainParamFrame, folderImg):
 
-        perfThreshLabel = Label(
-            trainParamFrame,
-            text='Threshold',
-            font='Helvetica 9 bold',
-            fg='blue'
-            )
-        perfThreshLabel.grid(row=12, column=0, sticky=E)
-
-        self.perfThresh = Entry(trainParamFrame, bd=4, width=5)
-        self.perfThresh.insert(0, "0.8")
-        self.perfThresh.config(state='disabled')
-        self.perfThresh.grid(
-            row=12, column=1, padx=1, sticky=W, ipadx=3, ipady=2
-            )
-
-        showSegValImgsStatus = IntVar(trainParamFrame)
-        showSegValImgs = Checkbutton(
-            trainParamFrame,
-            variable=showSegValImgsStatus,
-            text='Show Images',
-            fg='blue',
-            font='Helvetica 9 bold',
-            width=12
-            )
-        showSegValImgs.grid(
-            row=13, column=2, sticky=W, ipadx=3, ipady=3
-            )
-
-        startTrainingButton = Button(
+        vggModelDirButton = Button(
             trainParamFrame,
             image=folderImg,
-            text="Start Training", 
+            text="VGG          ",
             compound=LEFT,
+            command=lambda : self.setThisDirectory(0),
         )
-        startTrainingButton.image = folderImg
-        startTrainingButton.grid(row=14, column=0, columnspan=3, pady=1, padx=10, sticky=NSEW)
-        
-        trainParamFrame.grid_rowconfigure(8, minsize=12)
+        vggModelDirButton.image = folderImg
+        vggModelDirButton.grid(row=0, pady=2, padx=2, sticky=NSEW)
 
-
-        # Status messages frame design
-        statusMsgFrame = Frame(
-            trainTab,
-            highlightbackground="red",
-            width=50,
-            height=50,
-            highlightthickness=2,
+        self.vggModelPath = Entry(trainParamFrame, bd=4, width=30)
+        self.vggModelPath.insert(0, "Vgg Model Directory")
+        self.vggModelPath.config(state=DISABLED)
+        self.vggModelPath.grid(
+            row=0, column=1, columnspan=2, pady=2, padx=2, sticky=NSEW, ipadx=3, ipady=3
         )
-        statusMsgFrame.pack(side=RIGHT, fill=BOTH, expand=1, padx=2, pady=4)
 
-        statusMsgBox = Text(statusMsgFrame, bg="white", relief=SUNKEN)
-        statusMsgBox.pack(side=TOP, fill=BOTH, expand=1)
 
-        clearMsgButton = Button(statusMsgFrame, bg="cyan", text="Clear")
-        clearMsgButton.pack(side=LEFT, fill=X, expand=1, padx=4, pady=4)
+        trainDataDirButton = Button(
+            trainParamFrame,
+            image=folderImg,
+            text="Train         ",
+            compound=LEFT,
+            command=lambda : self.setThisDirectory(1),
+        )
+        trainDataDirButton.image = folderImg
+        trainDataDirButton.grid(row=1, pady=1, padx=2, sticky=NSEW)
 
-        saveMsgButton = Button(statusMsgFrame, bg="cyan", text="Save")
-        saveMsgButton.pack(side=LEFT, fill=X, expand=1, padx=4, pady=4)
+        self.trainDataPath = Entry(trainParamFrame, bd=4, width=30)
+        self.trainDataPath.insert(0, "Train Data Directory")
+        self.trainDataPath.config(state=DISABLED)
+        self.trainDataPath.grid(
+            row=1, column=1, columnspan=2, pady=2, padx=2, sticky=NSEW, ipadx=3, ipady=3
+        )
 
-        # Inference Tab Design
-        inferTab = ttk.Frame(tabControl)
-        tabControl.add(inferTab, text="     Infer     ")
+        trainLabelDirButton = Button(
+            trainParamFrame,
+            image=folderImg,
+            text="Label         ", 
+            compound=LEFT,
+            command=lambda : self.setThisDirectory(2),
+        )
+        trainLabelDirButton.image = folderImg
+        trainLabelDirButton.grid(row=2, pady=1, padx=2, sticky=NSEW)
 
-        tabControl.pack(expand=1, fill="both")
-        return
-    
+        self.trainLabelPath = Entry(trainParamFrame, bd=4, width=30)
+        self.trainLabelPath.insert(0, "Train Label Directory")
+        self.trainLabelPath.config(state=DISABLED)
+        self.trainLabelPath.grid(
+            row=2, column=1, columnspan=2, pady=2, padx=2, sticky=NSEW, ipadx=3, ipady=3
+        )
+
+        validationDataDirButton = Button(
+            trainParamFrame,
+            image=folderImg,
+            text="Validation",
+            compound=LEFT,
+            command=lambda : self.setThisDirectory(3),
+        )
+        validationDataDirButton.image = folderImg
+        validationDataDirButton.grid(row=3, pady=1, padx=2, sticky=NSEW)
+
+        self.validationDataPath = Entry(trainParamFrame, bd=4, width=30)
+        self.validationDataPath.insert(0, "Validation Data Directory")
+        self.validationDataPath.config(state=DISABLED)
+        self.validationDataPath.grid(
+            row=3, column=1, columnspan=2, pady=2, padx=2, sticky=NSEW, ipadx=3, ipady=3
+        )
+
+        testDataDirButton = Button(
+            trainParamFrame,
+            image=folderImg,
+            text="Test          ",
+            compound=LEFT,
+            command=lambda : self.setThisDirectory(4),
+        )
+        testDataDirButton.image = folderImg
+        testDataDirButton.grid(row=4, pady=1, padx=2, sticky=NSEW)
+
+        self.testDataPath = Entry(trainParamFrame, bd=4, width=30)
+        self.testDataPath.insert(0, "Test Data Directory")
+        self.testDataPath.config(state=DISABLED)
+        self.testDataPath.grid(
+            row=4, column=1, columnspan=2, pady=2, padx=2, sticky=NSEW, ipadx=3, ipady=3
+        )
+
+        testResDirButton = Button(
+            trainParamFrame,
+            image=folderImg,
+            text="Result       ",
+            compound=LEFT,
+            command=lambda : self.setThisDirectory(5),
+        )
+        testResDirButton.image = folderImg
+        testResDirButton.grid(row=5, pady=1, padx=2, sticky=NSEW)
+
+        self.testResPath = Entry(trainParamFrame, bd=4, width=30)
+        self.testResPath.insert(0, "Test Result Directory")
+        self.testResPath.config(state=DISABLED)
+        self.testResPath.grid(
+            row=5, column=1, columnspan=2, pady=2, padx=2, sticky=NSEW, ipadx=3, ipady=3
+        )
+
+        learntModelDirButton = Button(
+            trainParamFrame,
+            image=folderImg,
+            text="FCN         ",
+            compound=LEFT,
+            command=lambda : self.setThisDirectory(6),
+        )
+        learntModelDirButton.image = folderImg
+        learntModelDirButton.grid(row=6, pady=1, padx=2, sticky=NSEW)
+
+        self.learntModelPath = Entry(trainParamFrame, bd=4, width=30)
+        self.learntModelPath.insert(0, "Learnt Model Directory")
+        self.learntModelPath.config(state=DISABLED)
+        self.learntModelPath.grid(
+            row=6, column=1, columnspan=2, pady=2, padx=2, sticky=NSEW, ipadx=3, ipady=3
+        )
+
+        inferModelDirButton = Button(
+            trainParamFrame,
+            image=folderImg,
+            text="Infer         ",
+            compound=LEFT,
+            command=lambda : self.setThisDirectory(7),
+        )
+        inferModelDirButton.image = folderImg
+        inferModelDirButton.grid(row=7, pady=1, padx=2, sticky=NSEW)
+
+        self.inferModelPath = Entry(trainParamFrame, bd=4, width=30)
+        self.inferModelPath.insert(0, "Inference Model Directory")
+        self.inferModelPath.config(state=DISABLED)
+        self.inferModelPath.grid(
+            row=7, column=1, columnspan=2, pady=2, padx=2, sticky=NSEW, ipadx=3, ipady=3
+        )
+
+    # ----- Event functions -----  
+  
     def updateThresholdEntryStatus(self, saveModelStatus):
 
         if(saveModelStatus.get()):
@@ -339,36 +365,59 @@ class deepSemSeg_GUI:
 
         if len(currentDirectory) > 0:
             if Id == 0:
+                self.vggModelPath.config(state=NORMAL)
                 self.vggModelPath.delete(0, END)
                 self.vggModelPath.insert(0, currentDirectory)
+                self.vggModelPath.config(state=DISABLED)
             
             elif Id == 1:
+                self.trainDataPath.config(state=NORMAL)
                 self.trainDataPath.delete(0, END)
                 self.trainDataPath.insert(0, currentDirectory)
+                self.trainDataPath.config(state=DISABLED)
 
             elif Id == 2:
+                self.trainLabelPath.config(state=NORMAL)
                 self.trainLabelPath.delete(0, END)
                 self.trainLabelPath.insert(0, currentDirectory)
+                self.trainLabelPath.config(state=DISABLED)
 
             elif Id == 3:
+                self.validationDataPath.config(state=NORMAL)
                 self.validationDataPath.delete(0, END)
                 self.validationDataPath.insert(0, currentDirectory)
+                self.validationDataPath.config(state=DISABLED)
 
             elif Id == 4:
+                self.testDataPath.config(state=NORMAL)
                 self.testDataPath.delete(0, END)
                 self.testDataPath.insert(0, currentDirectory)
+                self.testDataPath.config(state=DISABLED)
 
             elif Id == 5:
+                self.testResPath.config(state=NORMAL)
                 self.testResPath.delete(0, END)
                 self.testResPath.insert(0, currentDirectory)
+                self.testResPath.config(state=DISABLED)
 
             elif Id == 6:
+                self.learntModelPath.config(state=NORMAL)
                 self.learntModelPath.delete(0, END)
                 self.learntModelPath.insert(0, currentDirectory)
+                self.learntModelPath.config(state=DISABLED)
 
             elif Id == 7:
+                self.inferModelPath.config(state=NORMAL)
                 self.inferModelPath.delete(0, END)
                 self.inferModelPath.insert(0, currentDirectory)
+                self.inferModelPath.config(state=DISABLED)
+    
+    def startTraining(self, statusMsgBox):
+        statusMsgBox.insert(END,self.vggModelPath.get()+'\n')
+        statusMsgBox.see(END)
+
+
+
 
 if __name__=='__main__':
     deepSemSeg_GUI_root = Tk()
