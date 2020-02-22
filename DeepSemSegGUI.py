@@ -1,4 +1,6 @@
-# from ImageSemanticSegmentor.FCN.FCN import FullyConvNet
+from ImageSemanticSegmentor.FCN.FCN import FullyConvNet
+import threading
+import tensorflow as tf
 from tkinter import *
 from tkinter import filedialog
 from tkinter import ttk
@@ -12,7 +14,7 @@ class deepSemSeg_GUI:
         deepSemSeg_GUI_root.title("Deep Semantic Segmentation")
         deepSemSeg_GUI_root.minsize(500, 460)
         # deepSemSeg_GUI_root.maxsize(500, 460)
-        deepSemSeg_GUI_root.geometry("750x540+500+150")
+        deepSemSeg_GUI_root.geometry("650x535+500+150")
 
         # Read and resize open folder image
         folderImg = PhotoImage(file=os.getcwd() + "\\gui_imgs\\open.png").subsample(
@@ -33,7 +35,8 @@ class deepSemSeg_GUI:
             #highlightbackground="blue",
             highlightthickness=2,
         )
-        trainParamFrame.pack(side=LEFT, fill=Y, expand=1)
+        trainParamFrame.grid(row=0, column=0, sticky=NSEW)
+
         # Set minisize for row-8
         trainParamFrame.grid_rowconfigure(8, minsize=12)
 
@@ -44,57 +47,77 @@ class deepSemSeg_GUI:
 
         startTrainingButton = Button(
             trainParamFrame,
-            text="Start Training",
-            bg='blue',
-            fg='yellow',
-            font='Helvetica 13 bold',
+            text="Train",
+            bg='#E0FFFF',
+            fg='green',
+            font='Helvetica 12 bold',
             compound=LEFT,
         )
         startTrainingButton.image = folderImg
         startTrainingButton.grid(row=14, column=0, columnspan=3, pady=1, padx=10, sticky=NSEW)
-        startTrainingButton.config(command=lambda : self.startTraining(statusMsgBox))
+        startTrainingButton.config(command=lambda : self.startTraingInNewThread(statusMsgBox))
 
 
+        
         # Status messages frame design
+        
         statusMsgFrame = Frame(
             trainTab,
             #highlightbackground="red",
-            highlightthickness=2
+            highlightthickness=1,
+            width=350,
+            height=400
         )
-        statusMsgFrame.pack(side=LEFT, fill=BOTH, expand=1)
+        statusMsgFrame.grid(row=0, column=1, columnspan=100, rowspan=100, sticky=NSEW)
+        statusMsgFrame.columnconfigure(1, weight=1)
+        statusMsgFrame.columnconfigure(0, weight=1)
+        statusMsgFrame.rowconfigure(0, weight=1)
+        statusMsgFrame.grid_propagate(False)
 
-        statusMsgBox = Text(statusMsgFrame, bg="white", relief=SUNKEN)
-        statusMsgBox.pack(side=TOP, fill=BOTH, expand=1)
+        statusMsgBox = Text(
+            statusMsgFrame,
+            bg="white",
+            relief=SUNKEN,
+            state=DISABLED,
+            width=350,
+            height=300
+            )
+        statusMsgBox.grid(row=0, column=0, columnspan=2, sticky=NSEW)
         scrollbar = Scrollbar(
             statusMsgBox,
             cursor='hand2'
             )
-        scrollbar.pack( side = RIGHT, fill = Y )
+        scrollbar.pack(side = RIGHT, fill = Y)
         statusMsgBox.config(yscrollcommand=scrollbar.set)
         scrollbar.config(command=statusMsgBox.yview)
 
-        clearMsgButton = Button(statusMsgFrame, bg="cyan", text="Clear")
-        clearMsgButton.pack(side=LEFT, fill=X, expand=1, padx=4, pady=4)
+        clearMsgButton = Button(statusMsgFrame, bg="#CCFFFF", text="Clear")
+        clearMsgButton.grid(row=1, column=0, sticky=NSEW)
+        clearMsgButton.config(command=lambda : self.clearMessages(statusMsgBox))
 
-        saveMsgButton = Button(statusMsgFrame, bg="cyan", text="Save")
-        saveMsgButton.pack(side=LEFT, fill=X, expand=1, padx=4, pady=4)
+        saveMsgButton = Button(statusMsgFrame, bg="#CCFFFF", text="Save")
+        saveMsgButton.grid(row=1, column=1, sticky=NSEW)
+        saveMsgButton.config(command=lambda : self.saveMessages(statusMsgBox))
 
         # Inference Tab Design
         inferTab = ttk.Frame(tabControl)
         tabControl.add(inferTab, text="     Infer     ")
 
         tabControl.pack(expand=1, fill="both")
+
+
+    # ---- Rendering Functions ----
     
     def renderValidateAndSaveModelInputGUI(self,trainParamFrame):
-        saveModelStatus = IntVar(trainParamFrame)
+        self.saveModelStatus = IntVar(trainParamFrame)
         saveModelChk = Checkbutton(
             trainParamFrame,
-            variable=saveModelStatus,
+            variable=self.saveModelStatus,
             text='Save Model',
             fg='blue',
             font='Helvetica 9 bold',
             width=10,
-            command=lambda : self.updateThresholdEntryStatus(saveModelStatus)
+            command=lambda : self.updateThresholdEntryStatus(self.saveModelStatus)
             )
         saveModelChk.grid(
             row=12, column=2, sticky=W, ipadx=3, ipady=3
@@ -115,10 +138,10 @@ class deepSemSeg_GUI:
             row=12, column=1, padx=1, sticky=W, ipadx=3, ipady=2
             )
 
-        showSegValImgsStatus = IntVar(trainParamFrame)
+        self.showSegValImgsStatus = IntVar(trainParamFrame)
         showSegValImgs = Checkbutton(
             trainParamFrame,
-            variable=showSegValImgsStatus,
+            variable=self.showSegValImgsStatus,
             text='Show Images',
             fg='blue',
             font='Helvetica 9 bold',
@@ -128,7 +151,6 @@ class deepSemSeg_GUI:
             row=13, column=2, sticky=W, ipadx=3, ipady=3
             )
 
-    # ---- Rendering Functions ----
 
     def renderTrainParamInputGUI(self,trainParamFrame):
         learnRateLabel = Label(
@@ -146,11 +168,11 @@ class deepSemSeg_GUI:
             )
 
         optAlgoList = ['Adam', 'Gradient Descent', 'Momentum']
-        optAlgo = StringVar(trainParamFrame)
-        optAlgo.set(optAlgoList[0])
+        self.optAlgo = StringVar(trainParamFrame)
+        self.optAlgo.set(optAlgoList[0])
         optAlgoOption = OptionMenu(
             trainParamFrame,
-            optAlgo,
+            self.optAlgo,
             *optAlgoList
             )
         optAlgoOption.config(width=12, font=('Helvetica', 9))
@@ -172,12 +194,13 @@ class deepSemSeg_GUI:
             row=10, column=1, padx=2, sticky=W, ipadx=3, ipady=3
             )
 
-        perfMetricList = ['IOU', 'F1-Measure']
-        perfMetric = StringVar(trainParamFrame)
-        perfMetric.set(perfMetricList[0])
+
+        perfMetricList = ['IOU', 'F1']
+        self.perfMetric = StringVar(trainParamFrame)
+        self.perfMetric.set(perfMetricList[0])
         perfMetricOption = OptionMenu(
             trainParamFrame,
-            perfMetric,
+            self.perfMetric,
             *perfMetricList
             )
         perfMetricOption.config(width=12, font=('Helvetica', 9))
@@ -199,17 +222,39 @@ class deepSemSeg_GUI:
             row=11, column=1, padx=2, sticky=W, ipadx=3, ipady=3
             )
 
-        batchSizeList = ['32', '64', '128']
-        batchSize = StringVar(trainParamFrame)
-        batchSize.set(batchSizeList[0])
+        batchSizeList = [32, 64, 128]
+        self.batchSize = IntVar(trainParamFrame)
+        self.batchSize.set(batchSizeList[0])
         batchSizeOption = OptionMenu(
             trainParamFrame,
-            batchSize,
+            self.batchSize,
             *batchSizeList
             )
         batchSizeOption.config(width=12, font=('Helvetica', 9))
         batchSizeOption.grid(
             row=11, column=2, padx=2, sticky=NSEW, ipadx=3, ipady=3
+            )
+
+        numOfClassLabel = Label(
+            trainParamFrame,
+            text='# Class',
+            font='Helvetica 9 bold',
+            fg='blue'
+            )
+        numOfClassLabel.grid(row=13, column=0, sticky=E)
+
+        self.numOfClasses = IntVar(trainParamFrame, value=2)
+        showSegValImgs = Spinbox(
+            trainParamFrame,
+            textvariable=self.numOfClasses,
+            from_=2,
+            to=10000,
+            bd=4,
+            width=5,
+            cursor='hand2'
+            )
+        showSegValImgs.grid(
+            row=13, column=1, sticky=W, ipadx=3, ipady=3
             )
 
     def renderDirectoryInputGUI(self, trainParamFrame, folderImg):
@@ -411,13 +456,115 @@ class deepSemSeg_GUI:
                 self.inferModelPath.delete(0, END)
                 self.inferModelPath.insert(0, currentDirectory)
                 self.inferModelPath.config(state=DISABLED)
+      
+    def startTraingInNewThread(self, statusMsgBox):
+        self.thread = threading.Thread(target = self.startTraining, args=(statusMsgBox,))
+        self.thread.start()
+        return
     
+    def clearMessages(self, statusMsgBox):
+        statusMsgBox.config(state=NORMAL)
+        statusMsgBox.delete(1.0,END)
+        statusMsgBox.config(state=DISABLED)
+
+    def saveMessages(self, statusMsgBox):
+        filename = filedialog.asksaveasfilename(defaultextension='.txt')
+        f = open(filename, 'w')
+        f.write(statusMsgBox.get('1.0', 'end'))
+        f.close()
+        messagebox.showinfo('FYI', 'Messages Saved')
+
     def startTraining(self, statusMsgBox):
-        statusMsgBox.insert(END,self.vggModelPath.get()+'\n')
+
+        statusMsgBox.config(state=NORMAL)
+        statusMsgBox.insert(END,'Creating Tensorflow session')
+        trainSession = tf.Session()
+        
+        statusMsgBox.insert(END,'\nTF training session created \n'+self.optAlgo.get()
+                            + '\n' + str(float(self.initLearnRate.get())+1)
+                            + '\n' + self.perfMetric.get()
+                            + '\n' + str(self.batchSize.get())
+                            + '\n' + str(self.saveModelStatus.get()+7)
+                            + '\n' + self.perfThresh.get()
+                            + '\n' + str(self.showSegValImgsStatus.get()+5)
+                            + '\n'
+                            )
+
         statusMsgBox.see(END)
+        statusMsgBox.config(state=DISABLED)
 
+        vggModelDir   = self.vggModelPath.get()
+        trainDataDir  = self.trainDataPath.get()
+        trainLabelDir = self.trainLabelPath.get()
+        validationDir = self.validationDataPath.get()
+        testDataDir   = self.testDataPath.get()
+        testResultDir = self.testResPath.get()
+        fcnModelDir   = self.learntModelPath.get()
+        fcnInferDir   = self.inferModelPath.get()
+        numOfClasses  = self.numOfClasses.get()
 
+        ImgSize       = (160,576)
+        initLearningRate    = float(self.initLearnRate.get())
+        maxGradNorm         = float(self.maxNorm.get())
+        if self.optAlgo.get() == 'Adam':
+            optAlgo = 'adam'
+        elif self.optAlgo.get() == 'Momentum':
+            optAlgo = 'mntm'
+        elif self.optAlgo.get() == 'Gradient Descent':
+            optAlgo = 'grad'
 
+        # Set training parameters
+        batchSize           = self.batchSize.get()
+        keepProb            = .5
+        metric              = self.perfMetric.get()
+        numOfEpochs         = int(self.numOfEpochs.get())
+        saveModel           = self.saveModelStatus.get()
+        perfThresh          = float(self.perfThresh.get())
+        showSegValImages    = self.showSegValImgsStatus.get()
+
+        statusMsgBox.config(state=NORMAL)
+        statusMsgBox.insert(END,'Creating object for training\n')
+        statusMsgBox.config(state=DISABLED)
+
+        imageSegmenter = FullyConvNet(
+            trainSession,
+            vggModelDir,
+            trainDataDir,
+            trainLabelDir,
+            validationDir,
+            fcnModelDir,
+            testDataDir,
+            fcnInferDir, 
+            numOfClasses
+            )
+        
+        statusMsgBox.config(state=NORMAL)
+        statusMsgBox.insert(END,'Object created\n')
+
+        statusMsgBox.insert(END,'Setting optimizer parameters\n')
+        statusMsgBox.config(state=DISABLED)
+
+        imageSegmenter.setOptimizer(optAlgo, initLearningRate, ImgSize, maxGradNorm)
+        
+        statusMsgBox.config(state=NORMAL)
+        statusMsgBox.insert(END,'Optimizer parameters set\n')
+
+        statusMsgBox.insert(END,'Training in progress\n')
+        statusMsgBox.config(state=DISABLED)
+
+        imageSegmenter.trainFCN(
+            batchSize,
+            keepProb,
+            metric,
+            numOfEpochs,
+            saveModel,
+            perfThresh,
+            showSegValImages
+            )
+
+        statusMsgBox.config(state=NORMAL)
+        statusMsgBox.insert(END,'Training completed\n')
+        statusMsgBox.config(state=DISABLED)
 
 if __name__=='__main__':
     deepSemSeg_GUI_root = Tk()

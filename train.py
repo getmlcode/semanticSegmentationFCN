@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
     print('Object created successfully')
     
-    imageSegmenter.setOptimizer(optAlgo, initLearningRate, ImgSize,maxGradNorm)
+    imageSegmenter.setOptimizer(optAlgo, initLearningRate, ImgSize, maxGradNorm)
     
     imageSegmenter.trainFCN(batchSize, keepProb, metric, numOfEpochs, saveModel, 
                             perfThresh, showSegValImages)
