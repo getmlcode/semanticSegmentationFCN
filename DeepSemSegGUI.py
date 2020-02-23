@@ -1,6 +1,4 @@
-from ImageSemanticSegmentor.FCN.FCN import FullyConvNet
 import threading
-import tensorflow as tf
 from tkinter import *
 from tkinter import filedialog
 from tkinter import ttk
@@ -56,7 +54,6 @@ class deepSemSeg_GUI:
             trainParamFrame,
             image=trainImg,
             fg='black',
-            #font='Helvetica 10',
             compound=LEFT,
         )
         startTrainingButton.image = trainImg
@@ -502,7 +499,6 @@ class deepSemSeg_GUI:
         messagebox.showinfo('FYI', 'Messages Saved')
 
     def validateForFloat(self, currentInput):
-        print(currentInput)
         if currentInput.replace('.','',1).isdigit():
             return True
         elif currentInput is "":
@@ -511,7 +507,6 @@ class deepSemSeg_GUI:
             return False
     
     def validateForInt(self, currentInput):
-        print(currentInput)
         if currentInput.isdigit():
             return True
         elif currentInput is "":
@@ -522,6 +517,12 @@ class deepSemSeg_GUI:
     def startTraining(self, statusMsgBox):
 
         statusMsgBox.config(state=NORMAL)
+        
+        statusMsgBox.insert(END,'Importing Tensorflow\n')
+        import tensorflow as tf
+        statusMsgBox.insert(END,'Importing FCN\n')
+        from ImageSemanticSegmentor.FCN.FCN import FullyConvNet
+        
         statusMsgBox.insert(END,'Creating Tensorflow session\n')
         trainSession = tf.Session()
         
