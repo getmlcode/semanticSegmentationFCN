@@ -12,44 +12,49 @@ class deepSemSeg_GUI:
         deepSemSeg_GUI_root.title("Deep Semantic Segmentation")
         deepSemSeg_GUI_root.minsize(500, 460)
         # deepSemSeg_GUI_root.maxsize(500, 460)
-        deepSemSeg_GUI_root.geometry("650x540+500+150")
-
+        deepSemSeg_GUI_root.geometry("650x540+400+120")
+        
         # Register entry widget's validation functions
         self.onlyFloat = (deepSemSeg_GUI_root.register(self.validateForFloat), '%P')
         self.onlyInt = (deepSemSeg_GUI_root.register(self.validateForInt), '%P')
 
         # Read and resize open folder image
-        folderImg = PhotoImage(file=os.getcwd() + "\\gui_imgs\\open.png").subsample(
-            25, 25
-        )
-        trainImg = PhotoImage(file=os.getcwd() + "\\gui_imgs\\train.png").subsample(
-            18, 18
-        )
+        folderImg = PhotoImage(file=os.getcwd() + "\\gui_imgs\\open.png").subsample(25, 25)
+        trainImg = PhotoImage(file=os.getcwd() + "\\gui_imgs\\train.png").subsample(18, 18)
 
-        # Create Tab Control
+        # Create tab control and tabs
         tabControl = ttk.Notebook(deepSemSeg_GUI_root)
+        trainTab = ttk.Frame(tabControl)
+        inferTab = ttk.Frame(tabControl)
 
         # Train Tab Design
-
-        # Parameter input frame design
-        trainTab = ttk.Frame(tabControl)
         tabControl.add(trainTab, text="     Train     ")
+        self.renderTrainTab(trainTab, folderImg, trainImg)
 
+        # Inference Tab Design
+        tabControl.add(inferTab, text="     Infer     ")
+        self.renderInferenceTab(inferTab)
+
+        # Pack tab control
+        tabControl.pack(expand=1, fill="both")
+
+
+    # ---- Rendering Functions ----
+    def renderTrainTab(self, trainTab, folderImg, trainImg):
         trainParamFrame = Frame(
             trainTab,
-            #highlightbackground="blue",
             highlightthickness=2,
         )
         trainParamFrame.grid(row=0, column=0, sticky=NSEW)
-
+        
         # Set minisize for row-8
         trainParamFrame.grid_rowconfigure(8, minsize=12)
-
-        # Create GUI elements
+        
+        # Create train GUI widgets
         self.renderDirectoryInputGUI(trainParamFrame, folderImg)
         self.renderTrainParamInputGUI(trainParamFrame)
         self.renderValidateAndSaveModelInputGUI(trainParamFrame)
-
+        
         startTrainingButton = Button(
             trainParamFrame,
             image=trainImg,
@@ -58,11 +63,8 @@ class deepSemSeg_GUI:
         )
         startTrainingButton.image = trainImg
         startTrainingButton.grid(row=14, column=0, columnspan=3, pady=4, padx=10, sticky=NSEW)
-        startTrainingButton.config(command=lambda : self.startTraingInNewThread(statusMsgBox))
 
-        
         # Status messages frame design
-        
         statusMsgFrame = Frame(
             trainTab,
             #highlightbackground="red",
@@ -77,7 +79,7 @@ class deepSemSeg_GUI:
         statusMsgFrame.columnconfigure(0, weight=1)
         statusMsgFrame.rowconfigure(0, weight=1)
         statusMsgFrame.grid_propagate(False)
-
+        
         statusMsgBox = Text(
             statusMsgFrame,
             bg="white",
@@ -94,24 +96,21 @@ class deepSemSeg_GUI:
         scrollbar.pack(side = RIGHT, fill = Y)
         statusMsgBox.config(yscrollcommand=scrollbar.set)
         scrollbar.config(command=statusMsgBox.yview)
-
+        
         clearMsgButton = Button(statusMsgFrame, bg="#CCFFFF", text="Clear")
         clearMsgButton.grid(row=1, column=0, pady=4, padx=2, sticky=NSEW)
         clearMsgButton.config(command=lambda : self.clearMessages(statusMsgBox))
-
+        
         saveMsgButton = Button(statusMsgFrame, bg="#CCFFFF", text="Save")
         saveMsgButton.grid(row=1, column=1, pady=4, padx=2, sticky=NSEW)
         saveMsgButton.config(command=lambda : self.saveMessages(statusMsgBox))
 
-        # Inference Tab Design
-        inferTab = ttk.Frame(tabControl)
-        tabControl.add(inferTab, text="     Infer     ")
-
-        tabControl.pack(expand=1, fill="both")
-
-
-    # ---- Rendering Functions ----
+        startTrainingButton.config(command=lambda : self.startTraingInNewThread(statusMsgBox))
     
+    def renderInferenceTab(self, inferTab):
+        
+        pass
+
     def renderValidateAndSaveModelInputGUI(self,trainParamFrame):
         self.saveModelStatus = IntVar(trainParamFrame)
         saveModelChk = Checkbutton(
@@ -212,7 +211,6 @@ class deepSemSeg_GUI:
         self.maxNorm.grid(
             row=10, column=1, padx=2, sticky=W, ipadx=3, ipady=3
             )
-
 
         perfMetricList = ['IOU', 'F1']
         self.perfMetric = StringVar(trainParamFrame)
