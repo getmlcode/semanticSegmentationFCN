@@ -14,11 +14,18 @@ class deepSemSeg_GUI:
         deepSemSeg_GUI_root.title("Deep Semantic Segmentation")
         deepSemSeg_GUI_root.minsize(500, 460)
         # deepSemSeg_GUI_root.maxsize(500, 460)
-        deepSemSeg_GUI_root.geometry("650x535+500+150")
+        deepSemSeg_GUI_root.geometry("650x540+500+150")
+
+        # Register entry widget's validation functions
+        self.onlyFloat = (deepSemSeg_GUI_root.register(self.validateForFloat), '%P')
+        self.onlyInt = (deepSemSeg_GUI_root.register(self.validateForInt), '%P')
 
         # Read and resize open folder image
         folderImg = PhotoImage(file=os.getcwd() + "\\gui_imgs\\open.png").subsample(
             25, 25
+        )
+        trainImg = PhotoImage(file=os.getcwd() + "\\gui_imgs\\train.png").subsample(
+            18, 18
         )
 
         # Create Tab Control
@@ -47,16 +54,14 @@ class deepSemSeg_GUI:
 
         startTrainingButton = Button(
             trainParamFrame,
-            text="Train",
-            bg='#E0FFFF',
-            fg='green',
-            font='Helvetica 12 bold',
+            image=trainImg,
+            fg='black',
+            #font='Helvetica 10',
             compound=LEFT,
         )
-        startTrainingButton.image = folderImg
-        startTrainingButton.grid(row=14, column=0, columnspan=3, pady=1, padx=10, sticky=NSEW)
+        startTrainingButton.image = trainImg
+        startTrainingButton.grid(row=14, column=0, columnspan=3, pady=4, padx=10, sticky=NSEW)
         startTrainingButton.config(command=lambda : self.startTraingInNewThread(statusMsgBox))
-
 
         
         # Status messages frame design
@@ -64,7 +69,9 @@ class deepSemSeg_GUI:
         statusMsgFrame = Frame(
             trainTab,
             #highlightbackground="red",
+            relief=SUNKEN,
             highlightthickness=1,
+            bd=2,
             width=350,
             height=400
         )
@@ -92,11 +99,11 @@ class deepSemSeg_GUI:
         scrollbar.config(command=statusMsgBox.yview)
 
         clearMsgButton = Button(statusMsgFrame, bg="#CCFFFF", text="Clear")
-        clearMsgButton.grid(row=1, column=0, sticky=NSEW)
+        clearMsgButton.grid(row=1, column=0, pady=4, padx=2, sticky=NSEW)
         clearMsgButton.config(command=lambda : self.clearMessages(statusMsgBox))
 
         saveMsgButton = Button(statusMsgFrame, bg="#CCFFFF", text="Save")
-        saveMsgButton.grid(row=1, column=1, sticky=NSEW)
+        saveMsgButton.grid(row=1, column=1, pady=4, padx=2, sticky=NSEW)
         saveMsgButton.config(command=lambda : self.saveMessages(statusMsgBox))
 
         # Inference Tab Design
@@ -131,11 +138,16 @@ class deepSemSeg_GUI:
             )
         perfThreshLabel.grid(row=12, column=0, sticky=E)
 
-        self.perfThresh = Entry(trainParamFrame, bd=4, width=5)
+        self.perfThresh = Entry(
+            trainParamFrame,
+            validate='key',
+            validatecommand=self.onlyFloat,
+            bd=4,
+            width=5)
         self.perfThresh.insert(0, "0.8")
         self.perfThresh.config(state='disabled')
         self.perfThresh.grid(
-            row=12, column=1, padx=1, sticky=W, ipadx=3, ipady=2
+            row=12, column=1, padx=1, sticky=W, pady=2, ipadx=3, ipady=2
             )
 
         self.showSegValImgsStatus = IntVar(trainParamFrame)
@@ -161,7 +173,12 @@ class deepSemSeg_GUI:
             )
         learnRateLabel.grid(row=9, column=0, sticky=E)
 
-        self.initLearnRate = Entry(trainParamFrame, bd=4, width=5)
+        self.initLearnRate = Entry(
+            trainParamFrame,
+            validate='key',
+            validatecommand=self.onlyFloat,
+            bd=4,
+            width=5)
         self.initLearnRate.insert(0, "0.001")
         self.initLearnRate.grid(
             row=9, column=1, padx=2, sticky=W, ipadx=3, ipady=3
@@ -188,7 +205,12 @@ class deepSemSeg_GUI:
             )
         maxNormLabel.grid(row=10, column=0, sticky=E)
 
-        self.maxNorm = Entry(trainParamFrame, bd=4, width=5)
+        self.maxNorm = Entry(
+            trainParamFrame,
+            validate='key',
+            validatecommand=self.onlyFloat,
+            bd=4,
+            width=5)
         self.maxNorm.insert(0, "0.1")
         self.maxNorm.grid(
             row=10, column=1, padx=2, sticky=W, ipadx=3, ipady=3
@@ -216,7 +238,12 @@ class deepSemSeg_GUI:
             )
         numOfEpochsLabel.grid(row=11, column=0, sticky=E)
 
-        self.numOfEpochs = Entry(trainParamFrame, bd=4, width=5)
+        self.numOfEpochs = Entry(
+            trainParamFrame,
+            validate='key',
+            validatecommand=self.onlyInt,
+            bd=4,
+            width=5)
         self.numOfEpochs.insert(0, "5")
         self.numOfEpochs.grid(
             row=11, column=1, padx=2, sticky=W, ipadx=3, ipady=3
@@ -474,19 +501,38 @@ class deepSemSeg_GUI:
         f.close()
         messagebox.showinfo('FYI', 'Messages Saved')
 
+    def validateForFloat(self, currentInput):
+        print(currentInput)
+        if currentInput.replace('.','',1).isdigit():
+            return True
+        elif currentInput is "":
+            return True
+        else:
+            return False
+    
+    def validateForInt(self, currentInput):
+        print(currentInput)
+        if currentInput.isdigit():
+            return True
+        elif currentInput is "":
+            return True
+        else:
+            return False
+
     def startTraining(self, statusMsgBox):
 
         statusMsgBox.config(state=NORMAL)
-        statusMsgBox.insert(END,'Creating Tensorflow session')
+        statusMsgBox.insert(END,'Creating Tensorflow session\n')
         trainSession = tf.Session()
         
-        statusMsgBox.insert(END,'\nTF training session created \n'+self.optAlgo.get()
-                            + '\n' + str(float(self.initLearnRate.get())+1)
+        statusMsgBox.insert(END,'TF training session created'
+                            + '\n' + self.optAlgo.get()
+                            + '\n' + str(float(self.initLearnRate.get()))
                             + '\n' + self.perfMetric.get()
                             + '\n' + str(self.batchSize.get())
-                            + '\n' + str(self.saveModelStatus.get()+7)
+                            + '\n' + str(self.saveModelStatus.get())
                             + '\n' + self.perfThresh.get()
-                            + '\n' + str(self.showSegValImgsStatus.get()+5)
+                            + '\n' + str(self.showSegValImgsStatus.get())
                             + '\n'
                             )
 
