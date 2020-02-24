@@ -18,9 +18,11 @@ class deepSemSeg_GUI:
         self.onlyFloat = (deepSemSeg_GUI_root.register(self.validateForFloat), '%P')
         self.onlyInt = (deepSemSeg_GUI_root.register(self.validateForInt), '%P')
 
-        # Read and resize open folder image
+        # Read and resize open images
         folderImg = PhotoImage(file=os.getcwd() + "\\gui_imgs\\open.png").subsample(25, 25)
         trainImg = PhotoImage(file=os.getcwd() + "\\gui_imgs\\train.png").subsample(18, 18)
+        leftArrowImg = PhotoImage(file=os.getcwd() + "\\gui_imgs\\left.png").subsample(18, 18)
+        rightArrowImg = PhotoImage(file=os.getcwd() + "\\gui_imgs\\right.png").subsample(18, 18)
 
         # Create tab control and tabs
         tabControl = ttk.Notebook(deepSemSeg_GUI_root)
@@ -30,10 +32,11 @@ class deepSemSeg_GUI:
         # Train Tab Design
         tabControl.add(trainTab, text="     Train     ")
         self.renderTrainTab(trainTab, folderImg, trainImg)
+        tabControl.pack(expand=1, fill="both")
 
         # Inference Tab Design
         tabControl.add(inferTab, text="     Infer     ")
-        self.renderInferenceTab(inferTab)
+        self.renderInferenceTab(inferTab, leftArrowImg, rightArrowImg)
 
         # Pack tab control
         tabControl.pack(expand=1, fill="both")
@@ -107,9 +110,49 @@ class deepSemSeg_GUI:
 
         startTrainingButton.config(command=lambda : self.startTraingInNewThread(statusMsgBox))
     
-    def renderInferenceTab(self, inferTab):
+    def renderInferenceTab(self, inferTab, leftArrowImg, rightArrowImg):
+        testImgFrame = Frame(
+            inferTab,
+            highlightthickness=2,
+            relief=SUNKEN,
+            bd=2,
+            width=645,
+            height=260
+        )
+        testImgFrame.grid(row=0, column=0, padx=2, pady=2, columnspan=100, sticky=NSEW)
+        testImgFrame.grid_propagate(False)
+        testImgFrame.grid_columnconfigure(1, minsize=560)
         
-        pass
+        previousImgButton = Button(testImgFrame,image = leftArrowImg,
+                                   height=245)
+        previousImgButton.image = leftArrowImg
+        previousImgButton.grid(row=0, column=0, padx=2, sticky=NSEW)
+        
+        imgLabel = Label(
+            testImgFrame,
+            text='Test Image Appears Here',
+            font='Helvetica 9 bold',
+            fg='blue'
+            )
+        imgLabel.grid(row=0, column=1, padx=2, sticky=NSEW)
+        
+        nextImgButton = Button(
+            testImgFrame,
+            image=rightArrowImg,
+            height=16)
+        nextImgButton.image = rightArrowImg
+        nextImgButton.grid(row=0, column=2, padx=2, sticky=NSEW)
+        
+        segmentedImgFrame = Frame(
+            inferTab,
+            highlightthickness=2,
+            relief=SUNKEN,
+            bd=2,
+            width=645,
+            height=260
+        )
+        segmentedImgFrame.grid(row=1, column=0, sticky=NSEW)
+        segmentedImgFrame.grid_propagate(False)
 
     def renderValidateAndSaveModelInputGUI(self,trainParamFrame):
         self.saveModelStatus = IntVar(trainParamFrame)
